@@ -160,7 +160,7 @@ type PhongTableProps = {
   onViewTenants?: (phong: Phong) => void
 }
 
-const getToaNhaName = (toaNha: string | { tenToaNha: string }, toaNhaList: ToaNha[]) => {
+const getToaNhaName = (toaNha: string | { tenToaNha?: string }, toaNhaList: ToaNha[]) => {
   if (typeof toaNha === 'object' && toaNha?.tenToaNha) {
     return toaNha.tenToaNha
   }

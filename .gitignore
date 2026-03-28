@@ -9,10 +9,7 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-backend/
-node_modules/
-.env
-.next/
+
 # testing
 /coverage
 

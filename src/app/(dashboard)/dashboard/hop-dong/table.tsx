@@ -180,16 +180,19 @@ const getKhachThueName = (khachThue: string | { hoTen: string }, khachThueList: 
   return khachThueObj?.hoTen || 'N/A'
 }
 
-const getToaNhaName = (phong: string | { toaNha?: { tenToaNha: string } | string }, phongList: Phong[], toaNhaList: ToaNha[]) => {
+const getToaNhaName = (phong: string | { toaNha?: { tenToaNha?: string } | string }, phongList: Phong[], toaNhaList: ToaNha[]) => {
   if (typeof phong === 'object' && phong?.toaNha) {
     if (typeof phong.toaNha === 'object') {
-      return phong.toaNha.tenToaNha
+      return phong.toaNha.tenToaNha || 'N/A'
     }
     const toaNhaObj = toaNhaList.find(t => t._id === phong.toaNha)
     return toaNhaObj?.tenToaNha || 'N/A'
   }
   const phongObj = phongList.find(p => p._id === phong)
   if (!phongObj) return 'N/A'
+  if (typeof phongObj.toaNha === 'object') {
+    return phongObj.toaNha.tenToaNha || 'N/A'
+  }
   const toaNhaObj = toaNhaList.find(t => t._id === phongObj.toaNha)
   return toaNhaObj?.tenToaNha || 'N/A'
 }

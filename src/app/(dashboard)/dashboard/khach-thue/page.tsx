@@ -387,17 +387,21 @@ export default function KhachThuePage() {
                 </div>
 
                 {/* Room info if available */}
-                {(khachThue as any).hopDongHienTai?.phong && (
+                {((khachThue as any).hopDongHienTaiList?.length || (khachThue as any).hopDongHienTai?.phong) && (
                   <div className="border-t pt-2">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Users className="h-3 w-3 text-green-600" />
-                      <span className="font-medium">Phòng: {(khachThue as any).hopDongHienTai.phong.maPhong}</span>
-                    </div>
-                    {(khachThue as any).hopDongHienTai.phong.toaNha && (
-                      <div className="flex items-center gap-2 text-xs text-gray-500 ml-5">
-                        <span>{(khachThue as any).hopDongHienTai.phong.toaNha.tenToaNha}</span>
+                    {(((khachThue as any).hopDongHienTaiList || ((khachThue as any).hopDongHienTai ? [(khachThue as any).hopDongHienTai] : [])) as any[]).map((hopDong: any) => (
+                      <div key={hopDong._id} className="mb-1 last:mb-0">
+                        <div className="flex items-center gap-2 text-sm">
+                          <Users className="h-3 w-3 text-green-600" />
+                          <span className="font-medium">Phòng: {hopDong.phong?.maPhong}</span>
+                        </div>
+                        {hopDong.phong?.toaNha && (
+                          <div className="flex items-center gap-2 text-xs text-gray-500 ml-5">
+                            <span>{hopDong.phong.toaNha.tenToaNha}</span>
+                          </div>
+                        )}
                       </div>
-                    )}
+                    ))}
                   </div>
                 )}
 
@@ -674,3 +678,5 @@ function KhachThueForm({
     </form>
   );
 }
+
+

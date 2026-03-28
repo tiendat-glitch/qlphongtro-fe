@@ -55,7 +55,7 @@ import { khachThueService } from '@/services/khachThueService';
 import { thanhToanService } from '@/services/thanhToanService';
 
 // Helper functions for form and dialogs
-const getPhongName = (phongId: string | Phong, phongList: Phong[]) => {
+const getPhongName = (phongId: string | { _id?: string; maPhong: string }, phongList: Phong[]) => {
   if (!phongId) return 'N/A';
   if (typeof phongId === 'object' && phongId.maPhong) {
     return phongId.maPhong;
@@ -67,7 +67,7 @@ const getPhongName = (phongId: string | Phong, phongList: Phong[]) => {
   return 'N/A';
 };
 
-const getKhachThueName = (khachThueId: string | KhachThue, khachThueList: KhachThue[]) => {
+const getKhachThueName = (khachThueId: string | { _id?: string; hoTen: string }, khachThueList: KhachThue[]) => {
   if (!khachThueId) return 'N/A';
   if (typeof khachThueId === 'object' && khachThueId.hoTen) {
     return khachThueId.hoTen;

@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Upload, X, Image as ImageIcon, Loader2, CreditCard } from 'lucide-react';
 import { toast } from 'sonner';
+import { uploadImageToCloudinary } from '@/lib/cloudinary-upload';
 
 interface CCCDUploadProps {
   anhCCCD: {
@@ -41,23 +42,10 @@ export function CCCDUpload({
     setUploading(prev => ({ ...prev, [type]: true }));
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Lỗi upload ảnh');
-      }
-
-      const result = await response.json();
+      const result = await uploadImageToCloudinary(file);
       onCCCDChange({
         ...anhCCCD,
-        [type]: result.data.secure_url
+        [type]: result.secure_url
       });
       
       toast.success(`Upload ảnh CCCD ${type === 'matTruoc' ? 'mặt trước' : 'mặt sau'} thành công!`);

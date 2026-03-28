@@ -4,6 +4,7 @@ import { useState, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { uploadImageToCloudinary } from '@/lib/cloudinary-upload';
 
 interface ImageUploadProps {
   imageUrl: string;
@@ -36,28 +37,12 @@ export function ImageUpload({
     setUploading(true);
 
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error('Upload failed');
-      }
-
-      const result = await response.json();
-      if (result.success && result.data.url) {
-        onImageChange(result.data.url);
-        toast.success('Upload ảnh thành công');
-      } else {
-        throw new Error('Upload failed');
-      }
+      const result = await uploadImageToCloudinary(file);
+      onImageChange(result.secure_url);
+      toast.success('Upload ảnh thành công');
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Có lỗi xảy ra khi upload ảnh');
+      toast.error(error instanceof Error ? error.message : 'Có lỗi xảy ra khi upload ảnh');
     } finally {
       setUploading(false);
       // Reset input

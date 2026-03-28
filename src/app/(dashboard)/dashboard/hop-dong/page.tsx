@@ -177,21 +177,26 @@ export default function HopDongPage() {
     return toaNhaObj?.tenToaNha || 'Không xác định';
   };
 
-  const getPhongInfo = (phong: string | { maPhong: string; toaNha?: { tenToaNha: string } }) => {
+  const getPhongInfo = (phong: string | { maPhong: string; toaNha?: { tenToaNha?: string } | string }) => {
     if (typeof phong === 'object' && phong?.maPhong) {
       return {
         maPhong: phong.maPhong,
-        toaNha: phong.toaNha?.tenToaNha || 'Không xác định'
+        toaNha: typeof phong.toaNha === 'object'
+          ? (phong.toaNha?.tenToaNha || 'Kh??ng x??c ?????nh')
+          : getToaNhaName(phong.toaNha || '')
       };
     }
 
     const phongObj = phongList.find(p => p._id === phong);
-    if (!phongObj) return { maPhong: 'Không xác định', toaNha: 'Không xác định' };
+    if (!phongObj) return { maPhong: 'Kh??ng x??c ?????nh', toaNha: 'Kh??ng x??c ?????nh' };
 
-    const toaNha = toaNhaList.find(t => t._id === phongObj.toaNha);
+    const toaNha = typeof phongObj.toaNha === 'object'
+      ? phongObj.toaNha?.tenToaNha
+      : toaNhaList.find(t => t._id === phongObj.toaNha)?.tenToaNha;
+
     return {
       maPhong: phongObj.maPhong,
-      toaNha: toaNha?.tenToaNha || 'Không xác định'
+      toaNha: toaNha || 'Kh??ng x??c ?????nh'
     };
   };
 

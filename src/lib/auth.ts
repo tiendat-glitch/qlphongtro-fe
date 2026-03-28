@@ -29,14 +29,14 @@ export const authOptions: NextAuthOptions = {
           const data = await res.json();
 
           if (res.ok && data.success && data.data) {
-            // data.data chứa { id, name, email, role, token }
             return {
               id: data.data.id.toString(),
               email: data.data.email,
               name: data.data.name,
               role: data.data.role,
               token: data.data.token,
-              // API chưa trả phone và avatar, có thể bổ sung sau nếu cần
+              phone: data.data.phone || '',
+              avatar: data.data.avatar || undefined,
             };
           }
 
@@ -55,8 +55,10 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.role = (user as any).role;
-        token.accessToken = (user as any).token;
+        token.role = user.role;
+        token.phone = user.phone;
+        token.avatar = user.avatar;
+        token.accessToken = user.token;
       }
       return token;
     },
@@ -64,8 +66,9 @@ export const authOptions: NextAuthOptions = {
       if (token) {
         session.user.id = token.sub!;
         session.user.role = token.role as string;
-        // Gắn token vào session để truyền xuống các API Client
-        (session.user as any).token = token.accessToken as string;
+        session.user.phone = token.phone as string | undefined;
+        session.user.avatar = token.avatar as string | undefined;
+        session.user.token = token.accessToken as string | undefined;
       }
       return session;
     }

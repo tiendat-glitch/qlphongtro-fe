@@ -23,7 +23,7 @@ import { hoaDonService } from '@/services/hoaDonService';
 import { thanhToanService } from '@/services/thanhToanService';
 
 // Helper functions
-const getPhongName = (phongId: string | Phong) => {
+const getPhongName = (phongId: string | { _id?: string; maPhong: string }) => {
   if (!phongId) return 'N/A';
   if (typeof phongId === 'object' && phongId.maPhong) {
     return phongId.maPhong;
@@ -31,7 +31,7 @@ const getPhongName = (phongId: string | Phong) => {
   return 'N/A';
 };
 
-const getKhachThueName = (khachThueId: string | KhachThue) => {
+const getKhachThueName = (khachThueId: string | { _id?: string; hoTen: string }) => {
   if (!khachThueId) return 'N/A';
   if (typeof khachThueId === 'object' && khachThueId.hoTen) {
     return khachThueId.hoTen;

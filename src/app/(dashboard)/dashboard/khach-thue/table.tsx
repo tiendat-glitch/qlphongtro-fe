@@ -251,9 +251,9 @@ const createColumns = (props: KhachThueTableProps): ColumnDef<KhachThue>[] => [
     header: "Phòng đang thuê",
     cell: ({ row }) => {
       const khachThue = row.original as any;
-      const hopDong = khachThue.hopDongHienTai;
-      
-      if (!hopDong || !hopDong.phong) {
+      const hopDongList = khachThue.hopDongHienTaiList || (khachThue.hopDongHienTai ? [khachThue.hopDongHienTai] : []);
+
+      if (!hopDongList.length) {
         return (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Home className="h-4 w-4" />
@@ -262,7 +262,7 @@ const createColumns = (props: KhachThueTableProps): ColumnDef<KhachThue>[] => [
         );
       }
       
-      const phong = hopDong.phong;
+      const phong = hopDongList[0].phong;
       const toaNha = phong.toaNha;
       
       return (
@@ -281,6 +281,11 @@ const createColumns = (props: KhachThueTableProps): ColumnDef<KhachThue>[] => [
               )}
             </div>
           </div>
+          {hopDongList.length > 1 && (
+            <div className="pl-6 text-xs text-muted-foreground">
+              +{hopDongList.length - 1} phòng khác
+            </div>
+          )}
         </div>
       );
     },
@@ -663,4 +668,5 @@ export function KhachThueDataTable(props: KhachThueDataTableProps) {
     </div>
   )
 }
+
 

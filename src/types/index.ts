@@ -52,7 +52,7 @@ export interface ToaNha {
 export interface Phong {
   _id?: string;
   maPhong: string;
-  toaNha: string; // ObjectId ref ToaNha
+  toaNha: string | { _id: string; tenToaNha: string; [key: string]: any }; // ref ToaNha
   tang: number;
   dienTich: number;
   giaThue: number;
@@ -96,6 +96,7 @@ export interface KhachThue {
   ngayCapNhat: Date;
   hopDongHienTai?: {
     _id: string;
+    maHopDong?: string;
     phong: {
       _id: string;
       maPhong: string;
@@ -105,14 +106,26 @@ export interface KhachThue {
       };
     };
   };
+  hopDongHienTaiList?: Array<{
+    _id: string;
+    maHopDong?: string;
+    phong: {
+      _id: string;
+      maPhong: string;
+      toaNha: {
+        _id: string;
+        tenToaNha: string;
+      };
+    };
+  }>;
 }
 
 export interface HopDong {
   _id?: string;
   maHopDong: string;
-  phong: string | { _id: string; maPhong?: string; [key: string]: any }; // ObjectId ref Phong
-  khachThueId: string[]; // ObjectId[] ref KhachThue
-  nguoiDaiDien: string | { _id: string; hoTen?: string; [key: string]: any }; // ObjectId ref KhachThue
+  phong: string | { _id: string; maPhong: string; toaNha?: { _id?: string; tenToaNha: string } | string; [key: string]: any };
+  khachThueId: Array<string | { _id: string; hoTen: string; soDienThoai?: string; [key: string]: any }>;
+  nguoiDaiDien: string | { _id: string; hoTen: string; soDienThoai?: string; [key: string]: any };
   ngayBatDau: Date;
   ngayKetThuc: Date;
   giaThue: number;
@@ -154,9 +167,9 @@ export interface HoaDon {
   maHoaDon: string;
   hopDong: string | { _id: string; [key: string]: any }; // ObjectId ref HopDong
   hopDong_id?: string;
-  phong: string | { _id: string; [key: string]: any }; // ObjectId ref Phong
+  phong: string | { _id: string; maPhong: string; toaNha?: { _id?: string; tenToaNha: string } | string; [key: string]: any };
   phong_id?: string;
-  khachThue: string | { _id: string; [key: string]: any }; // ObjectId ref KhachThue
+  khachThue: string | { _id: string; hoTen: string; soDienThoai?: string; [key: string]: any };
   khachThue_id?: string;
   thang: number;
   nam: number;
@@ -196,8 +209,8 @@ export interface ThanhToan {
 export interface SuCo {
   _id?: string;
   phong: string | { _id: string; maPhong: string };
-  khachThue: string | { _id: string; hoTen: string };
-  nguoiBaoCao?: string | { _id: string; hoTen: string }; // Alias cho khachThue
+  khachThue: string | { _id: string; hoTen: string; soDienThoai?: string };
+  nguoiBaoCao?: string | { _id: string; hoTen: string; soDienThoai?: string }; // Alias cho khachThue
   tieuDe: string;
   moTa: string;
   anhSuCo: string[];

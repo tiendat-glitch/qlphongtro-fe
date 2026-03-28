@@ -124,19 +124,6 @@ export default function ThanhToanPage() {
     toast.success('Đã tải dữ liệu mới nhất');
   };
 
-  const testPaymentAPI = async () => {
-    try {
-      const response = await fetch('/api/test-payment');
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Test API response:', data);
-        alert('Check console for test data');
-      }
-    } catch (error) {
-      console.error('Test API error:', error);
-    }
-  };
-
   const filteredThanhToan = thanhToanList.filter(thanhToan => {
     const matchesSearch = thanhToan.ghiChu?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       thanhToan.thongTinChuyenKhoan?.soGiaoDich?.toLowerCase().includes(searchTerm.toLowerCase());

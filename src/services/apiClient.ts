@@ -3,7 +3,7 @@ import { getSession } from 'next-auth/react';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
 
 /**
- * Hàm gọi API chung cho toàn bộ dự án thay thế việc gọi trực tiếp /api/...
+ * Ham goi API chung cho frontend sang backend Node.js.
  */
 export async function apiClient<T>(
   endpoint: string,
@@ -14,14 +14,13 @@ export async function apiClient<T>(
   const khachThueToken = typeof window !== 'undefined' ? localStorage.getItem('khachThueToken') : null;
   const token = sessionToken || khachThueToken;
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...(options.headers || {}),
-  };
+  const headers = new Headers(options.headers);
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
 
-  // Chỉ tự động thêm token nếu trong options.headers chưa có Authorization
-  if (token && !headers['Authorization']) {
-    headers['Authorization'] = `Bearer ${token}`;
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`);
   }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {

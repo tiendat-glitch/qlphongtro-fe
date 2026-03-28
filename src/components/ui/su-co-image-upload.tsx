@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Upload, X, Image as ImageIcon, Loader2, AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
+import { uploadImageToCloudinary } from '@/lib/cloudinary-upload';
 
 interface SuCoImageUploadProps {
   images: string[];
@@ -46,21 +47,8 @@ export function SuCoImageUpload({
 
     try {
       const uploadPromises = newFiles.map(async (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const response = await fetch('/api/upload', {
-          method: 'POST',
-          body: formData,
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Lỗi upload ảnh');
-        }
-
-        const result = await response.json();
-        return result.data.secure_url || result.data.url;
+        const result = await uploadImageToCloudinary(file);
+        return result.secure_url;
       });
 
       const uploadedUrls = await Promise.all(uploadPromises);
