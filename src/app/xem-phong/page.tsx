@@ -18,24 +18,28 @@ import {
   MapPin,
   Users,
   Square,
-  DollarSign,
   Phone,
   Eye,
   ArrowLeft,
   Star,
   ZoomIn
 } from 'lucide-react';
-import { Phong, ToaNha } from '@/types';
+import { Phong } from '@/types';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { ImageCarousel } from '@/components/ui/image-carousel';
 import { phongService } from '@/services/phongService';
-import { toaNhaService } from '@/services/toaNhaService';
+
+type ToaNhaFilterOption = {
+  _id: string;
+  tenToaNha: string;
+};
 
 export default function XemPhongPage() {
   const [phongList, setPhongList] = useState<Phong[]>([]);
-  const [toaNhaList, setToaNhaList] = useState<ToaNha[]>([]);
+  const [toaNhaList, setToaNhaList] = useState<ToaNhaFilterOption[]>([]);
   const [loading, setLoading] = useState(true);
+  const [publicApiMissing, setPublicApiMissing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedToaNha, setSelectedToaNha] = useState('');
   const [selectedTrangThai, setSelectedTrangThai] = useState('');
@@ -43,9 +47,25 @@ export default function XemPhongPage() {
   const [showDetails, setShowDetails] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
+  const deriveToaNhaOptions = (phongs: Phong[]): ToaNhaFilterOption[] => {
+    const map = new Map<string, string>();
+
+    for (const phong of phongs) {
+      const toaNhaValue = phong.toaNha;
+      if (typeof toaNhaValue === 'object' && toaNhaValue?._id) {
+        map.set(toaNhaValue._id, toaNhaValue.tenToaNha || `Toa nha ${toaNhaValue._id}`);
+      } else if (typeof toaNhaValue === 'string' && toaNhaValue) {
+        if (!map.has(toaNhaValue)) {
+          map.set(toaNhaValue, `Toa nha ${toaNhaValue}`);
+        }
+      }
+    }
+
+    return Array.from(map.entries()).map(([id, tenToaNha]) => ({ _id: id, tenToaNha }));
+  };
+
   useEffect(() => {
     fetchPhong();
-    fetchToaNha();
 
     // Check for phong parameter in URL
     const urlParams = new URLSearchParams(window.location.search);
@@ -61,22 +81,26 @@ export default function XemPhongPage() {
       if (selectedToaNha && selectedToaNha !== 'all') filters.toaNha_id = selectedToaNha;
       if (selectedTrangThai && selectedTrangThai !== 'all') filters.trangThai = selectedTrangThai;
 
-      const data = await phongService.getAll(filters);
+      const data = await phongService.getPublicAll(filters);
       setPhongList(data || []);
+      if (!selectedToaNha || selectedToaNha === 'all') {
+        setToaNhaList(deriveToaNhaOptions(data || []));
+      }
+      setPublicApiMissing(false);
     } catch (error) {
       console.error('Error fetching phong:', error);
+      if (
+        error instanceof Error &&
+        error.message.toLowerCase().includes('backend chua ho tro get /api/public/phong')
+      ) {
+        setPublicApiMissing(true);
+        setPhongList([]);
+        setToaNhaList([]);
+        return;
+      }
       toast.error('Có lỗi xảy ra khi tải danh sách phòng');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchToaNha = async () => {
-    try {
-      const data = await toaNhaService.getAll();
-      setToaNhaList(data || []);
-    } catch (error) {
-      console.error('Error fetching toa nha:', error);
     }
   };
 
@@ -160,6 +184,28 @@ export default function XemPhongPage() {
               ))}
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (publicApiMissing) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-cyan-50">
+        <div className="container mx-auto px-4 py-10 md:py-16">
+          <Card className="max-w-2xl mx-auto border-0 shadow-xl bg-white/95 backdrop-blur-sm">
+            <CardHeader className="text-center">
+              <CardTitle className="text-xl md:text-2xl">Khong the tai danh sach phong cong khai</CardTitle>
+              <CardDescription>
+                Backend chua ho tro endpoint GET /api/public/phong nen trang /xem-phong chua the lay du lieu public.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex justify-center">
+              <p className="text-sm text-slate-600 text-center">
+                Vui long bo sung endpoint public tren backend de trang nay hoat dong dung vai tro public.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

@@ -194,16 +194,26 @@ export interface HoaDon {
 }
 
 export interface ThanhToan {
+  id?: number;
   _id?: string;
-  hoaDon: string; // ObjectId ref HoaDon
+  hoaDon: string | HoaDon; // ObjectId ref HoaDon
+  hoaDon_id?: string | number;
   soTien: number;
   phuongThuc: 'tienMat' | 'chuyenKhoan' | 'viDienTu';
   thongTinChuyenKhoan?: ThongTinChuyenKhoan;
-  ngayThanhToan: Date;
+  thongTinChuyenKhoan_nganHang?: string | null;
+  thongTinChuyenKhoan_soGiaoDich?: string | null;
+  ngayThanhToan: Date | string;
   nguoiNhan: string; // ObjectId ref NguoiDung
+  nguoiNhan_id?: string | number;
+  maHoaDon?: string;
+  maPhong?: string;
+  tenNguoiDaiDien?: string;
+  hoTen?: string;
+  tenNguoiNhan?: string;
   ghiChu?: string;
   anhBienLai?: string;
-  ngayTao: Date;
+  ngayTao: Date | string;
 }
 
 export interface SuCo {

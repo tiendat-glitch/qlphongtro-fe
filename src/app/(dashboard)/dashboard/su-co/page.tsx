@@ -75,6 +75,7 @@ export default function SuCoPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [incidentTypeOverrides, setIncidentTypeOverrides] = useState<Partial<Record<string, SuCo['loaiSuCo']>>>({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSuCo, setEditingSuCo] = useState<SuCo | null>(null);
 
@@ -138,11 +139,19 @@ export default function SuCoPage() {
     toast.success('Đã tải dữ liệu mới nhất');
   };
 
+  const getResolvedIncidentType = (suCo: SuCo) => {
+    if (!suCo._id) {
+      return suCo.loaiSuCo;
+    }
+
+    return incidentTypeOverrides[suCo._id] ?? suCo.loaiSuCo;
+  };
+
   const filteredSuCo = suCoList.filter(suCo => {
     const matchesSearch = suCo.tieuDe.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          suCo.moTa.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || suCo.trangThai === statusFilter;
-    const matchesType = typeFilter === 'all' || suCo.loaiSuCo === typeFilter;
+    const matchesType = typeFilter === 'all' || getResolvedIncidentType(suCo) === typeFilter;
     const matchesPriority = priorityFilter === 'all' || suCo.mucDoUuTien === priorityFilter;
     
     return matchesSearch && matchesStatus && matchesType && matchesPriority;
@@ -163,7 +172,11 @@ export default function SuCoPage() {
     }
   };
 
-  const getTypeBadge = (type: string) => {
+  const getTypeBadge = (type?: string) => {
+    if (!type) {
+      return <Badge variant="outline">Chưa chọn</Badge>;
+    }
+
     switch (type) {
       case 'dienNuoc':
         return <Badge variant="secondary">Điện nước</Badge>;
@@ -221,11 +234,27 @@ export default function SuCoPage() {
       await suCoService.delete(id);
       cache.clearCache();
       setSuCoList(prev => prev.filter(suCo => suCo._id !== id));
+      setIncidentTypeOverrides(prev => {
+        if (!prev[id]) {
+          return prev;
+        }
+
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
       toast.success('Xóa sự cố thành công');
     } catch (error: any) {
       console.error('Error deleting su co:', error);
       toast.error(error.message || 'Có lỗi xảy ra khi xóa sự cố');
     }
+  };
+
+  const handleIncidentTypeChange = (id: string, newType: SuCo['loaiSuCo']) => {
+    setIncidentTypeOverrides(prev => ({
+      ...prev,
+      [id]: newType,
+    }));
   };
 
   const handleStatusChange = async (id: string, newStatus: string) => {
@@ -376,6 +405,8 @@ export default function SuCoPage() {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onStatusChange={handleStatusChange}
+            typeOverrides={incidentTypeOverrides}
+            onIncidentTypeChange={handleIncidentTypeChange}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             statusFilter={statusFilter}
@@ -483,7 +514,7 @@ export default function SuCoPage() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Wrench className="h-3 w-3 text-gray-400" />
-                      <span className="text-gray-600">{getTypeBadge(suCo.loaiSuCo)}</span>
+                      <span className="text-gray-600">{getTypeBadge(getResolvedIncidentType(suCo))}</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                       <Calendar className="h-3 w-3" />

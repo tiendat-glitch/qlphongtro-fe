@@ -157,7 +157,7 @@ type ThanhToanTableProps = {
   onDownload?: (thanhToan: ThanhToanPopulated) => void
 }
 
-const getHoaDonInfo = (hoaDon: string | HoaDon, hoaDonList: HoaDon[]) => {
+const getHoaDonInfo = (hoaDon: string | HoaDon | undefined, hoaDonList: HoaDon[]) => {
   if (typeof hoaDon === 'object' && hoaDon?.maHoaDon) {
     return hoaDon.maHoaDon
   }
@@ -165,6 +165,41 @@ const getHoaDonInfo = (hoaDon: string | HoaDon, hoaDonList: HoaDon[]) => {
     const hoaDonItem = hoaDonList.find(h => h._id === hoaDon)
     return hoaDonItem?.maHoaDon || 'N/A'
   }
+  return 'N/A'
+}
+
+const getHoaDonObject = (hoaDon: string | HoaDon | undefined, hoaDonList: HoaDon[]) => {
+  if (typeof hoaDon === 'object' && hoaDon !== null) return hoaDon
+  if (typeof hoaDon === 'string') return hoaDonList.find(h => h._id === hoaDon) || null
+  return null
+}
+
+const getPaymentInvoiceCode = (thanhToan: ThanhToanPopulated, hoaDonList: HoaDon[]) => {
+  if (thanhToan.maHoaDon) return thanhToan.maHoaDon
+  return getHoaDonInfo(thanhToan.hoaDon, hoaDonList)
+}
+
+const getPaymentRoomCode = (thanhToan: ThanhToanPopulated, hoaDonList: HoaDon[]) => {
+  if (thanhToan.maPhong) return thanhToan.maPhong
+
+  const hoaDonInfo = getHoaDonObject(thanhToan.hoaDon, hoaDonList) as any
+  if (hoaDonInfo?.maPhong) return hoaDonInfo.maPhong
+  if (typeof hoaDonInfo?.phong === 'object' && hoaDonInfo?.phong?.maPhong) {
+    return hoaDonInfo.phong.maPhong
+  }
+
+  return 'N/A'
+}
+
+const getPaymentRepresentative = (thanhToan: ThanhToanPopulated, hoaDonList: HoaDon[]) => {
+  if (thanhToan.tenNguoiDaiDien) return thanhToan.tenNguoiDaiDien
+  if (thanhToan.hoTen) return thanhToan.hoTen
+
+  const hoaDonInfo = getHoaDonObject(thanhToan.hoaDon, hoaDonList) as any
+  if (typeof hoaDonInfo?.khachThue === 'object' && hoaDonInfo?.khachThue?.hoTen) {
+    return hoaDonInfo.khachThue.hoTen
+  }
+
   return 'N/A'
 }
 
@@ -205,13 +240,13 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
     accessorKey: "hoaDon",
     header: "Hóa đơn",
     cell: ({ row }) => {
-      const hoaDonInfo = typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
+      const hoaDonInfo = getHoaDonObject(row.original.hoaDon, props.hoaDonList);
       return (
         <div className="min-w-32">
           <div className="flex items-center gap-2">
             <Receipt className="h-4 w-4 text-muted-foreground" />
             <span className="font-medium">
-              {getHoaDonInfo(row.original.hoaDon, props.hoaDonList)}
+              {getPaymentInvoiceCode(row.original, props.hoaDonList)}
             </span>
           </div>
           {hoaDonInfo && (
@@ -227,34 +262,26 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
   {
     accessorKey: "phong",
     header: "Phòng",
-    cell: ({ row }) => {
-      const hoaDonInfo = typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
-      const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
-      return (
-        <div className="flex items-center gap-2 min-w-24">
-          <Home className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm">
-            {phongInfo?.maPhong || 'N/A'}
-          </span>
-        </div>
-      );
-    },
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2 min-w-24">
+        <Home className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm">
+          {getPaymentRoomCode(row.original, props.hoaDonList)}
+        </span>
+      </div>
+    ),
   },
   {
     accessorKey: "khachThue",
     header: "Người đại diện",
-    cell: ({ row }) => {
-      const hoaDonInfo = typeof row.original.hoaDon === 'object' ? row.original.hoaDon : null;
-      const khachThueInfo = hoaDonInfo && typeof hoaDonInfo.khachThue === 'object' ? (hoaDonInfo.khachThue as any) : null;
-      return (
-        <div className="flex items-center gap-2 min-w-32">
-          <Users className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm">
-            {khachThueInfo?.hoTen || 'N/A'}
-          </span>
-        </div>
-      );
-    },
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2 min-w-32">
+        <Users className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm">
+          {getPaymentRepresentative(row.original, props.hoaDonList)}
+        </span>
+      </div>
+    ),
   },
   {
     accessorKey: "soTien",
@@ -275,11 +302,14 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
     header: "Thông tin giao dịch",
     cell: ({ row }) => {
       const tt = row.original.thongTinChuyenKhoan
-      if (!tt) return <span className="text-muted-foreground">-</span>
+      const nganHang = tt?.nganHang || row.original.thongTinChuyenKhoan_nganHang || ''
+      const soGiaoDich = tt?.soGiaoDich || row.original.thongTinChuyenKhoan_soGiaoDich || ''
+
+      if (!nganHang && !soGiaoDich) return <span className="text-muted-foreground">-</span>
       return (
         <div className="min-w-32">
-          <div className="text-sm font-medium">{tt.nganHang}</div>
-          <div className="text-xs text-muted-foreground">{tt.soGiaoDich}</div>
+          <div className="text-sm font-medium">{nganHang || '-'}</div>
+          <div className="text-xs text-muted-foreground">{soGiaoDich || '-'}</div>
         </div>
       )
     },

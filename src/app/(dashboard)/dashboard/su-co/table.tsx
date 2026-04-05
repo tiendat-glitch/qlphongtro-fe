@@ -124,7 +124,11 @@ const getStatusBadge = (status: string) => {
   }
 }
 
-const getTypeBadge = (type: string) => {
+const getTypeBadge = (type?: string) => {
+  if (!type) {
+    return <Badge variant="outline">Chưa chọn</Badge>
+  }
+
   switch (type) {
     case 'dienNuoc':
       return <Badge variant="secondary">Điện nước</Badge>
@@ -188,6 +192,8 @@ type SuCoTableProps = {
   onEdit: (suCo: SuCo) => void
   onDelete: (id: string) => void
   onStatusChange: (id: string, newStatus: string) => void
+  typeOverrides?: Partial<Record<string, SuCo['loaiSuCo']>>
+  onIncidentTypeChange?: (id: string, newType: SuCo['loaiSuCo']) => void
 }
 
 const getPhongName = (phong: string | { maPhong: string }, phongList: Phong[]) => {
@@ -204,6 +210,17 @@ const getKhachThueName = (khachThue: string | { hoTen: string }, khachThueList: 
     return khachThueObj?.hoTen || 'N/A'
   }
   return khachThue?.hoTen || 'N/A'
+}
+
+const getResolvedIncidentType = (
+  suCo: SuCo,
+  typeOverrides?: Partial<Record<string, SuCo['loaiSuCo']>>
+) => {
+  if (!suCo._id) {
+    return suCo.loaiSuCo
+  }
+
+  return typeOverrides?.[suCo._id] ?? suCo.loaiSuCo
 }
 
 const createColumns = (props: SuCoTableProps): ColumnDef<SuCo>[] => [
@@ -286,7 +303,32 @@ const createColumns = (props: SuCoTableProps): ColumnDef<SuCo>[] => [
   {
     accessorKey: "loaiSuCo",
     header: "Loại",
-    cell: ({ row }) => getTypeBadge(row.original.loaiSuCo),
+    cell: ({ row }) => {
+      const suCo = row.original
+      const currentType = getResolvedIncidentType(suCo, props.typeOverrides)
+
+      if (!suCo._id || !props.onIncidentTypeChange) {
+        return getTypeBadge(currentType)
+      }
+
+      return (
+        <Select
+          value={currentType}
+          onValueChange={(value) => props.onIncidentTypeChange?.(suCo._id!, value as SuCo['loaiSuCo'])}
+        >
+          <SelectTrigger className="w-[150px] h-8">
+            <SelectValue placeholder="Chọn loại" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="dienNuoc">Điện nước</SelectItem>
+            <SelectItem value="noiThat">Nội thất</SelectItem>
+            <SelectItem value="vesinh">Vệ sinh</SelectItem>
+            <SelectItem value="anNinh">An ninh</SelectItem>
+            <SelectItem value="khac">Khác</SelectItem>
+          </SelectContent>
+        </Select>
+      )
+    },
   },
   {
     accessorKey: "mucDoUuTien",

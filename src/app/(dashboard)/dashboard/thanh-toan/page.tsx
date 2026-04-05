@@ -149,7 +149,7 @@ export default function ThanhToanPage() {
     }
   };
 
-  const getHoaDonInfo = (hoaDon: string | any) => {
+  const getHoaDonInfo = (hoaDon: string | HoaDon | undefined) => {
     console.log('getHoaDonInfo called with:', hoaDon, 'type:', typeof hoaDon);
 
     // Nếu hoaDon là object (đã được populate), lấy maHoaDon trực tiếp
@@ -176,20 +176,29 @@ export default function ThanhToanPage() {
     }).format(amount);
   };
 
-  const isToday = (date: Date) => {
+  const isToday = (date: Date | string) => {
+    const parsedDate = new Date(date);
+    if (Number.isNaN(parsedDate.getTime())) return false;
+
     const today = new Date();
-    return date.toDateString() === today.toDateString();
+    return parsedDate.toDateString() === today.toDateString();
   };
 
-  const isThisWeek = (date: Date) => {
+  const isThisWeek = (date: Date | string) => {
+    const parsedDate = new Date(date);
+    if (Number.isNaN(parsedDate.getTime())) return false;
+
     const today = new Date();
     const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-    return date >= weekAgo && date <= today;
+    return parsedDate >= weekAgo && parsedDate <= today;
   };
 
-  const isThisMonth = (date: Date) => {
+  const isThisMonth = (date: Date | string) => {
+    const parsedDate = new Date(date);
+    if (Number.isNaN(parsedDate.getTime())) return false;
+
     const today = new Date();
-    return date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+    return parsedDate.getMonth() === today.getMonth() && parsedDate.getFullYear() === today.getFullYear();
   };
 
   const handleEdit = (thanhToan: ThanhToanPopulated) => {
@@ -400,9 +409,16 @@ export default function ThanhToanPage() {
         {/* Mobile Card List */}
         <div className="space-y-3">
           {filteredThanhToan.map((thanhToan) => {
-            const hoaDonInfo = typeof thanhToan.hoaDon === 'object' ? (thanhToan.hoaDon as HoaDon) : null;
+            const hoaDonInfo = (typeof thanhToan.hoaDon === 'object' && thanhToan.hoaDon !== null
+              ? thanhToan.hoaDon
+              : hoaDonList.find(h => h._id === thanhToan.hoaDon)) as HoaDon | null;
             const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
             const khachThueInfo = hoaDonInfo && typeof hoaDonInfo.khachThue === 'object' ? (hoaDonInfo.khachThue as any) : null;
+            const maHoaDon = thanhToan.maHoaDon || hoaDonInfo?.maHoaDon || getHoaDonInfo(thanhToan.hoaDon);
+            const maPhong = thanhToan.maPhong || phongInfo?.maPhong || (hoaDonInfo as any)?.maPhong || 'N/A';
+            const tenNguoiDaiDien = thanhToan.tenNguoiDaiDien || thanhToan.hoTen || khachThueInfo?.hoTen || 'N/A';
+            const nganHang = thanhToan.thongTinChuyenKhoan?.nganHang || thanhToan.thongTinChuyenKhoan_nganHang || '';
+            const soGiaoDich = thanhToan.thongTinChuyenKhoan?.soGiaoDich || thanhToan.thongTinChuyenKhoan_soGiaoDich || '';
 
             return (
               <Card key={thanhToan._id} className="p-4">
@@ -411,7 +427,7 @@ export default function ThanhToanPage() {
                   <div className="flex justify-between items-start">
                     <div>
                       <h3 className="font-medium text-gray-900">
-                        {hoaDonInfo?.maHoaDon || getHoaDonInfo(thanhToan.hoaDon)}
+                        {maHoaDon}
                       </h3>
                       <p className="text-sm text-gray-500">
                         {new Date(thanhToan.ngayThanhToan).toLocaleDateString('vi-VN')}
@@ -421,29 +437,28 @@ export default function ThanhToanPage() {
                   </div>
 
                   {/* Room and Tenant info */}
-                  {hoaDonInfo && (
-                    <div className="space-y-1 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Receipt className="h-3 w-3 text-gray-400" />
-                        <span className="text-gray-600">
-                          Phòng: {phongInfo?.maPhong || 'N/A'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Users className="h-3 w-3 text-gray-400" />
-                        <span className="text-gray-600">
-                          {khachThueInfo?.hoTen || 'N/A'}
-                        </span>
-                      </div>
+                  <div className="space-y-1 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Receipt className="h-3 w-3 text-gray-400" />
+                      <span className="text-gray-600">
+                        Phòng: {maPhong}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Users className="h-3 w-3 text-gray-400" />
+                      <span className="text-gray-600">
+                        {tenNguoiDaiDien}
+                      </span>
+                    </div>
+                    {hoaDonInfo && (
                       <div className="flex items-center gap-2">
                         <Calendar className="h-3 w-3 text-gray-400" />
                         <span className="text-gray-600">
                           Tháng {hoaDonInfo.thang}/{hoaDonInfo.nam}
                         </span>
                       </div>
-                    </div>
-                  )}
-
+                    )}
+                  </div>
                   {/* Amount */}
                   <div className="border-t pt-2">
                     <span className="text-gray-500 text-sm">Số tiền:</span>
@@ -451,23 +466,22 @@ export default function ThanhToanPage() {
                   </div>
 
                   {/* Transfer info if available */}
-                  {thanhToan.phuongThuc === 'chuyenKhoan' && thanhToan.thongTinChuyenKhoan && (
+                  {(nganHang || soGiaoDich) && (
                     <div className="text-xs text-gray-500 space-y-1">
-                      {thanhToan.thongTinChuyenKhoan.nganHang && (
+                      {nganHang && (
                         <div className="flex items-center gap-2">
                           <CreditCard className="h-3 w-3" />
-                          <span>{thanhToan.thongTinChuyenKhoan.nganHang}</span>
+                          <span>{nganHang}</span>
                         </div>
                       )}
-                      {thanhToan.thongTinChuyenKhoan.soGiaoDich && (
+                      {soGiaoDich && (
                         <div className="flex items-center gap-2">
                           <FileText className="h-3 w-3" />
-                          <span className="font-mono">{thanhToan.thongTinChuyenKhoan.soGiaoDich}</span>
+                          <span className="font-mono">{soGiaoDich}</span>
                         </div>
                       )}
                     </div>
                   )}
-
                   {/* Note if available */}
                   {thanhToan.ghiChu && (
                     <div className="text-xs text-gray-500 border-t pt-2">

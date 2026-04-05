@@ -1,0 +1,369 @@
+{
+  "thanhToans": [
+    {
+      "id": 3,
+      "hoaDon_id": 2,
+      "soTien": 1000000,
+      "phuongThuc": "viDienTu",
+      "thongTinChuyenKhoan_nganHang": null,
+      "thongTinChuyenKhoan_soGiaoDich": "MOMO-2026002",
+      "ngayThanhToan": "2026-03-15T03:10:00.000Z",
+      "nguoiNhan_id": 4,
+      "ghiChu": "Thu tien qua vi dien tu dot 2.",
+      "anhBienLai": "receipt-003.jpg",
+      "ngayTao": "2026-04-05T08:54:16.000Z",
+      "maHoaDon": "HDN-202603002",
+      "maPhong": "P201",
+      "tenNguoiDaiDien": "Tran Thi Binh",
+      "hoTen": "Tran Thi Binh",
+      "tenNguoiNhan": "Nhan Vien Van Hanh 1",
+      "_id": "3"
+    },
+    {
+      "id": 2,
+      "hoaDon_id": 2,
+      "soTien": 1500000,
+      "phuongThuc": "tienMat",
+      "thongTinChuyenKhoan_nganHang": null,
+      "thongTinChuyenKhoan_soGiaoDich": null,
+      "ngayThanhToan": "2026-03-08T11:20:00.000Z",
+      "nguoiNhan_id": 4,
+      "ghiChu": "Thu tien mat dot 1.",
+      "anhBienLai": "receipt-002.jpg",
+      "ngayTao": "2026-04-05T08:54:16.000Z",
+      "maHoaDon": "HDN-202603002",
+      "maPhong": "P201",
+      "tenNguoiDaiDien": "Tran Thi Binh",
+      "hoTen": "Tran Thi Binh",
+      "tenNguoiNhan": "Nhan Vien Van Hanh 1",
+      "_id": "2"
+    },
+    {
+      "id": 1,
+      "hoaDon_id": 1,
+      "soTien": 3463000,
+      "phuongThuc": "chuyenKhoan",
+      "thongTinChuyenKhoan_nganHang": "Vietcombank",
+      "thongTinChuyenKhoan_soGiaoDich": "TT-2026001",
+      "ngayThanhToan": "2026-03-05T02:15:00.000Z",
+      "nguoiNhan_id": 1,
+      "ghiChu": "Thanh toan du tien phong thang 3.",
+      "anhBienLai": "receipt-001.jpg",
+      "ngayTao": "2026-04-05T08:54:16.000Z",
+      "maHoaDon": "HDN-202603001",
+      "maPhong": "P101",
+      "tenNguoiDaiDien": "Nguyen Van An",
+      "hoTen": "Nguyen Van An",
+      "tenNguoiNhan": "Admin He Thong",
+      "_id": "1"
+    },
+    {
+      "id": 4,
+      "hoaDon_id": 4,
+      "soTien": 5467000,
+      "phuongThuc": "chuyenKhoan",
+      "thongTinChuyenKhoan_nganHang": "ACB",
+      "thongTinChuyenKhoan_soGiaoDich": "TT-2026004",
+      "ngayThanhToan": "2026-03-04T04:00:00.000Z",
+      "nguoiNhan_id": 1,
+      "ghiChu": "Thanh toan du hoa don phong P401.",
+      "anhBienLai": "receipt-004.jpg",
+      "ngayTao": "2026-04-05T08:54:16.000Z",
+      "maHoaDon": "HDN-202603004",
+      "maPhong": "P401",
+      "tenNguoiDaiDien": "Pham Minh Duc",
+      "hoTen": "Pham Minh Duc",
+      "tenNguoiNhan": "Admin He Thong",
+      "_id": "4"
+    },
+    {
+      "id": 5,
+      "hoaDon_id": 5,
+      "soTien": 1500000,
+      "phuongThuc": "chuyenKhoan",
+      "thongTinChuyenKhoan_nganHang": "Techcombank",
+      "thongTinChuyenKhoan_soGiaoDich": "TT-2026005",
+      "ngayThanhToan": "2026-03-02T08:30:00.000Z",
+      "nguoiNhan_id": 5,
+      "ghiChu": "Khach thanh toan truoc mot phan.",
+      "anhBienLai": "receipt-005.jpg",
+      "ngayTao": "2026-04-05T08:54:16.000Z",
+      "maHoaDon": "HDN-202603005",
+      "maPhong": "P501",
+      "tenNguoiDaiDien": "Hoang Thu Em",
+      "hoTen": "Hoang Thu Em",
+      "tenNguoiNhan": "Nhan Vien Van Hanh 2",
+      "_id": "5"
+    }
+  ],
+  "hoaDons": [
+    {
+      "id": 1,
+      "maHoaDon": "HDN-202603001",
+      "hopDong_id": 1,
+      "phong_id": 1,
+      "khachThue_id": 1,
+      "thang": 3,
+      "nam": 2026,
+      "tienPhong": 3000000,
+      "tienDien": 105000,
+      "soDien": 30,
+      "chiSoDienBanDau": 100,
+      "chiSoDienCuoiKy": 130,
+      "tienNuoc": 108000,
+      "soNuoc": 6,
+      "chiSoNuocBanDau": 12,
+      "chiSoNuocCuoiKy": 18,
+      "phiDichVu": [
+        {
+          "gia": 100000,
+          "ten": "Wifi"
+        },
+        {
+          "gia": 150000,
+          "ten": "Gui xe"
+        }
+      ],
+      "tongTien": 3463000,
+      "daThanhToan": 3463000,
+      "conLai": 0,
+      "trangThai": "daThanhToan",
+      "hanThanhToan": "2026-04-04T17:00:00.000Z",
+      "ghiChu": "Khach da thanh toan du bang chuyen khoan.",
+      "ngayTao": "2026-04-05T08:54:16.000Z",
+      "ngayCapNhat": "2026-04-05T08:54:16.000Z",
+      "maPhong": "P101",
+      "tenKhachThue": "Nguyen Van An",
+      "maHopDong": "HD-2026001",
+      "_id": "1",
+      "phong": {
+        "_id": "1",
+        "maPhong": "P101"
+      },
+      "khachThue": {
+        "_id": "1",
+        "hoTen": "Nguyen Van An"
+      },
+      "hopDong": {
+        "_id": "1",
+        "maHopDong": "HD-2026001"
+      }
+    },
+    {
+      "id": 2,
+      "maHoaDon": "HDN-202603002",
+      "hopDong_id": 2,
+      "phong_id": 2,
+      "khachThue_id": 2,
+      "thang": 3,
+      "nam": 2026,
+      "tienPhong": 3500000,
+      "tienDien": 144400,
+      "soDien": 38,
+      "chiSoDienBanDau": 150,
+      "chiSoDienCuoiKy": 188,
+      "tienNuoc": 120000,
+      "soNuoc": 6,
+      "chiSoNuocBanDau": 10,
+      "chiSoNuocCuoiKy": 16,
+      "phiDichVu": [
+        {
+          "gia": 120000,
+          "ten": "Wifi"
+        },
+        {
+          "gia": 100000,
+          "ten": "Gui xe"
+        }
+      ],
+      "tongTien": 3984400,
+      "daThanhToan": 2500000,
+      "conLai": 1484400,
+      "trangThai": "daThanhToanMotPhan",
+      "hanThanhToan": "2026-04-06T17:00:00.000Z",
+      "ghiChu": "Khach da thanh toan mot phan, con no tien dien nuoc.",
+      "ngayTao": "2026-04-05T08:54:16.000Z",
+      "ngayCapNhat": "2026-04-05T08:54:16.000Z",
+      "maPhong": "P201",
+      "tenKhachThue": "Tran Thi Binh",
+      "maHopDong": "HD-2026002",
+      "_id": "2",
+      "phong": {
+        "_id": "2",
+        "maPhong": "P201"
+      },
+      "khachThue": {
+        "_id": "2",
+        "hoTen": "Tran Thi Binh"
+      },
+      "hopDong": {
+        "_id": "2",
+        "maHopDong": "HD-2026002"
+      }
+    },
+    {
+      "id": 3,
+      "maHoaDon": "HDN-202603003",
+      "hopDong_id": 3,
+      "phong_id": 3,
+      "khachThue_id": 3,
+      "thang": 3,
+      "nam": 2026,
+      "tienPhong": 4200000,
+      "tienDien": 180000,
+      "soDien": 45,
+      "chiSoDienBanDau": 200,
+      "chiSoDienCuoiKy": 245,
+      "tienNuoc": 176000,
+      "soNuoc": 8,
+      "chiSoNuocBanDau": 20,
+      "chiSoNuocCuoiKy": 28,
+      "phiDichVu": [
+        {
+          "gia": 120000,
+          "ten": "Wifi"
+        },
+        {
+          "gia": 130000,
+          "ten": "Giat say"
+        },
+        {
+          "gia": 50000,
+          "ten": "Rac"
+        }
+      ],
+      "tongTien": 4856000,
+      "daThanhToan": 0,
+      "conLai": 4856000,
+      "trangThai": "chuaThanhToan",
+      "hanThanhToan": "2026-04-09T17:00:00.000Z",
+      "ghiChu": "Hoa don moi tao, chua ghi nhan thanh toan.",
+      "ngayTao": "2026-04-05T08:54:16.000Z",
+      "ngayCapNhat": "2026-04-05T08:54:16.000Z",
+      "maPhong": "P301",
+      "tenKhachThue": "Le Quoc Cuong",
+      "maHopDong": "HD-2026003",
+      "_id": "3",
+      "phong": {
+        "_id": "3",
+        "maPhong": "P301"
+      },
+      "khachThue": {
+        "_id": "3",
+        "hoTen": "Le Quoc Cuong"
+      },
+      "hopDong": {
+        "_id": "3",
+        "maHopDong": "HD-2026003"
+      }
+    },
+    {
+      "id": 4,
+      "maHoaDon": "HDN-202603004",
+      "hopDong_id": 4,
+      "phong_id": 4,
+      "khachThue_id": 4,
+      "thang": 3,
+      "nam": 2026,
+      "tienPhong": 4700000,
+      "tienDien": 210000,
+      "soDien": 50,
+      "chiSoDienBanDau": 260,
+      "chiSoDienCuoiKy": 310,
+      "tienNuoc": 207000,
+      "soNuoc": 9,
+      "chiSoNuocBanDau": 25,
+      "chiSoNuocCuoiKy": 34,
+      "phiDichVu": [
+        {
+          "gia": 120000,
+          "ten": "Wifi"
+        },
+        {
+          "gia": 230000,
+          "ten": "Bao tri"
+        }
+      ],
+      "tongTien": 5467000,
+      "daThanhToan": 5467000,
+      "conLai": 0,
+      "trangThai": "daThanhToan",
+      "hanThanhToan": "2026-04-07T17:00:00.000Z",
+      "ghiChu": "Khach thanh toan du ngay dau chu ky.",
+      "ngayTao": "2026-04-05T08:54:16.000Z",
+      "ngayCapNhat": "2026-04-05T08:54:16.000Z",
+      "maPhong": "P401",
+      "tenKhachThue": "Pham Minh Duc",
+      "maHopDong": "HD-2026004",
+      "_id": "4",
+      "phong": {
+        "_id": "4",
+        "maPhong": "P401"
+      },
+      "khachThue": {
+        "_id": "4",
+        "hoTen": "Pham Minh Duc"
+      },
+      "hopDong": {
+        "_id": "4",
+        "maHopDong": "HD-2026004"
+      }
+    },
+    {
+      "id": 5,
+      "maHoaDon": "HDN-202603005",
+      "hopDong_id": 5,
+      "phong_id": 5,
+      "khachThue_id": 5,
+      "thang": 3,
+      "nam": 2026,
+      "tienPhong": 5500000,
+      "tienDien": 270000,
+      "soDien": 60,
+      "chiSoDienBanDau": 320,
+      "chiSoDienCuoiKy": 380,
+      "tienNuoc": 300000,
+      "soNuoc": 12,
+      "chiSoNuocBanDau": 30,
+      "chiSoNuocCuoiKy": 42,
+      "phiDichVu": [
+        {
+          "gia": 150000,
+          "ten": "Wifi"
+        },
+        {
+          "gia": 150000,
+          "ten": "Gui xe"
+        },
+        {
+          "gia": 100000,
+          "ten": "May giat"
+        }
+      ],
+      "tongTien": 6470000,
+      "daThanhToan": 1500000,
+      "conLai": 4970000,
+      "trangThai": "quaHan",
+      "hanThanhToan": "2026-03-09T17:00:00.000Z",
+      "ghiChu": "Hoa don da qua han, dang nhac no.",
+      "ngayTao": "2026-04-05T08:54:16.000Z",
+      "ngayCapNhat": "2026-04-05T08:54:16.000Z",
+      "maPhong": "P501",
+      "tenKhachThue": "Hoang Thu Em",
+      "maHopDong": "HD-2026005",
+      "_id": "5",
+      "phong": {
+        "_id": "5",
+        "maPhong": "P501"
+      },
+      "khachThue": {
+        "_id": "5",
+        "hoTen": "Hoang Thu Em"
+      },
+      "hopDong": {
+        "_id": "5",
+        "maHopDong": "HD-2026005"
+      }
+    }
+  ]
+}
