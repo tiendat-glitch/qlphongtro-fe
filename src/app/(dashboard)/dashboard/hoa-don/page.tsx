@@ -88,6 +88,95 @@ const formatCurrency = (amount: number) => {
   }).format(amount);
 };
 
+const getSafePhiDichVu = (value: unknown): Array<{ ten: string; gia: number }> => {
+  console.debug('[HoaDonPage][getSafePhiDichVu] Input', {
+    valueType: typeof value,
+    isArray: Array.isArray(value),
+  });
+
+  if (Array.isArray(value)) {
+    console.debug('[HoaDonPage][getSafePhiDichVu] Using array directly', {
+      length: value.length,
+    });
+    return value
+      .filter((item): item is { ten?: unknown; gia?: unknown } => !!item && typeof item === 'object')
+      .map((item) => ({
+        ten: String(item.ten ?? ''),
+        gia: Number.isFinite(Number(item.gia)) ? Number(item.gia) : 0,
+      }));
+  }
+
+  if (typeof value === 'string' && value.trim()) {
+    console.debug('[HoaDonPage][getSafePhiDichVu] Parsing JSON string', {
+      rawLength: value.length,
+    });
+    try {
+      return getSafePhiDichVu(JSON.parse(value));
+    } catch {
+      console.warn('[HoaDonPage][getSafePhiDichVu] Failed to parse JSON', {
+        rawSample: value.slice(0, 120),
+      });
+      return [];
+    }
+  }
+
+  console.debug('[HoaDonPage][getSafePhiDichVu] Fallback empty array');
+  return [];
+};
+
+const captureInvoiceCanvas = async (
+  element: HTMLElement,
+  logPrefix: string
+) => {
+  const baseOptions: Parameters<typeof html2canvas>[1] = {
+    scale: 2,
+    useCORS: true,
+    allowTaint: true,
+    backgroundColor: '#ffffff',
+    logging: false,
+    onclone: (clonedDoc) => {
+      const styleId = 'pdf-safe-color-fallback';
+      if (clonedDoc.getElementById(styleId)) return;
+
+      const style = clonedDoc.createElement('style');
+      style.id = styleId;
+      style.textContent = `
+        html, body {
+          background: #ffffff !important;
+          color: #000000 !important;
+        }
+        *, *::before, *::after {
+          border-color: #d1d5db !important;
+          outline-color: #2563eb !important;
+          text-shadow: none !important;
+          box-shadow: none !important;
+        }
+      `;
+      clonedDoc.head.appendChild(style);
+    },
+  };
+
+  try {
+    return await html2canvas(element, baseOptions);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    const isUnsupportedColorError = /unsupported color function ["']?(lab|oklch)["']?/i.test(message);
+
+    if (!isUnsupportedColorError) {
+      throw error;
+    }
+
+    console.warn(`[${logPrefix}] html2canvas color parser failed, retry with foreignObjectRendering`, {
+      message,
+    });
+
+    return html2canvas(element, {
+      ...baseOptions,
+      foreignObjectRendering: true,
+    });
+  }
+};
+
 export default function HoaDonPage() {
   const router = useRouter();
   const hoaDonCache = useCache<HoaDon[]>({ key: CACHE_KEYS.hoaDonList, duration: 300000 });
@@ -283,6 +372,15 @@ export default function HoaDonPage() {
   };
 
   const handleDownload = (hoaDon: HoaDon) => {
+    const phiDichVuList = getSafePhiDichVu(hoaDon.phiDichVu);
+    console.debug('[HoaDonPage][handleDownload] Start export HTML', {
+      invoiceId: hoaDon._id,
+      maHoaDon: hoaDon.maHoaDon,
+      phiDichVuType: typeof hoaDon.phiDichVu,
+      phiDichVuIsArray: Array.isArray(hoaDon.phiDichVu),
+      normalizedPhiDichVuLength: phiDichVuList.length,
+    });
+
     // Create a simple HTML invoice and download as PDF
     const invoiceHtml = `
       <!DOCTYPE html>
@@ -327,7 +425,7 @@ export default function HoaDonPage() {
             <span>Tiền nước (${hoaDon.soNuoc} m³)</span>
             <span>${formatCurrency(hoaDon.tienNuoc)}</span>
           </div>
-          ${hoaDon.phiDichVu.map(phi => `
+          ${phiDichVuList.map(phi => `
             <div class="item">
               <span>${phi.ten}</span>
               <span>${formatCurrency(phi.gia)}</span>
@@ -361,6 +459,10 @@ export default function HoaDonPage() {
     `;
     
     const blob = new Blob([invoiceHtml], { type: 'text/html' });
+    console.debug('[HoaDonPage][handleDownload] HTML generated', {
+      htmlLength: invoiceHtml.length,
+      blobSize: blob.size,
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -372,9 +474,19 @@ export default function HoaDonPage() {
   };
 
   const handleScreenshot = async (hoaDon: HoaDon) => {
+    let tempElement: HTMLDivElement | null = null;
+    const phiDichVuList = getSafePhiDichVu(hoaDon.phiDichVu);
+    console.debug('[HoaDonPage][handleScreenshot] Start export PDF', {
+      invoiceId: hoaDon._id,
+      maHoaDon: hoaDon.maHoaDon,
+      phiDichVuType: typeof hoaDon.phiDichVu,
+      phiDichVuIsArray: Array.isArray(hoaDon.phiDichVu),
+      normalizedPhiDichVuLength: phiDichVuList.length,
+    });
+
     try {
       // Tạo element tạm thời để chụp ảnh
-      const tempElement = document.createElement('div');
+      tempElement = document.createElement('div');
       tempElement.innerHTML = `
         <div style="
           width: 800px; 
@@ -450,7 +562,7 @@ export default function HoaDonPage() {
               <div style="display: flex; justify-content: space-between;"><span>Tiền phòng</span><span>${formatCurrency(hoaDon.tienPhong)}</span></div>
               <div style="display: flex; justify-content: space-between;"><span>Tiền điện (${hoaDon.soDien} kWh)</span><span>${formatCurrency(hoaDon.tienDien)}</span></div>
               <div style="display: flex; justify-content: space-between;"><span>Tiền nước (${hoaDon.soNuoc} m³)</span><span>${formatCurrency(hoaDon.tienNuoc)}</span></div>
-              ${hoaDon.phiDichVu.map(phi => `
+              ${phiDichVuList.map(phi => `
                 <div style="display: flex; justify-content: space-between;"><span>${phi.ten}</span><span>${formatCurrency(phi.gia)}</span></div>
               `).join('')}
             </div>
@@ -480,17 +592,16 @@ export default function HoaDonPage() {
       tempElement.style.left = '-9999px';
       tempElement.style.top = '-9999px';
       document.body.appendChild(tempElement);
-
-      // Chụp ảnh
-      const canvas = await html2canvas(tempElement, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff'
+      console.debug('[HoaDonPage][handleScreenshot] Temp element appended', {
+        childCount: tempElement.childElementCount,
       });
 
-      // Xóa element tạm thời
-      document.body.removeChild(tempElement);
+      // Chụp ảnh
+      const canvas = await captureInvoiceCanvas(tempElement, 'HoaDonPage');
+      console.debug('[HoaDonPage][handleScreenshot] Canvas captured', {
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height,
+      });
 
       // Tạo PDF
       const imgData = canvas.toDataURL('image/png');
@@ -499,6 +610,13 @@ export default function HoaDonPage() {
       const pageHeight = 295;
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
       let heightLeft = imgHeight;
+      const estimatedPages = Math.max(1, Math.ceil(imgHeight / pageHeight));
+      console.debug('[HoaDonPage][handleScreenshot] PDF metrics', {
+        imgWidth,
+        pageHeight,
+        imgHeight,
+        estimatedPages,
+      });
 
       let position = 0;
 
@@ -511,13 +629,32 @@ export default function HoaDonPage() {
         pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
         heightLeft -= pageHeight;
       }
+      console.debug('[HoaDonPage][handleScreenshot] PDF pages rendered', {
+        actualPages: pdf.getNumberOfPages(),
+      });
 
       // Tải xuống PDF
       pdf.save(`hoa-don-${hoaDon.maHoaDon}.pdf`);
+      console.debug('[HoaDonPage][handleScreenshot] PDF saved', {
+        fileName: `hoa-don-${hoaDon.maHoaDon}.pdf`,
+      });
       toast.success('Đã xuất hóa đơn thành PDF thành công!');
     } catch (error) {
-      console.error('Error generating PDF:', error);
+      console.error('Error generating PDF:', error, {
+        invoiceId: hoaDon._id,
+        maHoaDon: hoaDon.maHoaDon,
+        phiDichVuRaw: hoaDon.phiDichVu,
+        normalizedPhiDichVuLength: phiDichVuList.length,
+      });
       toast.error('Có lỗi xảy ra khi xuất PDF');
+    } finally {
+      console.debug('[HoaDonPage][handleScreenshot] Cleanup', {
+        hasTempElement: !!tempElement,
+        isConnected: !!tempElement?.isConnected,
+      });
+      if (tempElement?.isConnected) {
+        document.body.removeChild(tempElement);
+      }
     }
   };
 
@@ -924,7 +1061,7 @@ export default function HoaDonPage() {
                     <span>Tiền nước ({viewingHoaDon.soNuoc} m³)</span>
                     <span>{formatCurrency(viewingHoaDon.tienNuoc)}</span>
                   </div>
-                  {viewingHoaDon.phiDichVu.map((phi, index) => (
+                  {getSafePhiDichVu(viewingHoaDon.phiDichVu).map((phi, index) => (
                     <div key={index} className="flex justify-between">
                       <span>{phi.ten}</span>
                       <span>{formatCurrency(phi.gia)}</span>
