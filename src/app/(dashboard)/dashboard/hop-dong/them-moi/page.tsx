@@ -29,6 +29,7 @@ import { hopDongService } from '@/services/hopDongService';
 import { phongService } from '@/services/phongService';
 import { khachThueService } from '@/services/khachThueService';
 import { cn } from "@/lib/utils";
+import { invalidateEntityCaches } from '@/lib/cache-invalidation';
 import {
   Command,
   CommandEmpty,
@@ -210,8 +211,7 @@ export default function ThemMoiHopDongPage() {
       const createdHopDong = await hopDongService.create(payload);
       const createdMaHopDong = createdHopDong?.maHopDong?.trim();
 
-      // Xóa cache để force refresh data
-      sessionStorage.removeItem('hop-dong-data');
+      invalidateEntityCaches('hop-dong');
       toast.success(
         createdMaHopDong
           ? `Đã tạo hợp đồng ${createdMaHopDong} thành công`
@@ -727,4 +727,3 @@ export default function ThemMoiHopDongPage() {
     </div>
   );
 }
-

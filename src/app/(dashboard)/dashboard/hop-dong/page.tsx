@@ -48,15 +48,15 @@ import { hopDongService } from '@/services/hopDongService';
 import { phongService } from '@/services/phongService';
 import { khachThueService } from '@/services/khachThueService';
 import { toaNhaService } from '@/services/toaNhaService';
+import { CACHE_KEYS } from '@/lib/cache-keys';
+import { invalidateEntityCaches } from '@/lib/cache-invalidation';
 
 export default function HopDongPage() {
   const router = useRouter();
-  const cache = useCache<{
-    hopDongList: HopDong[];
-    phongList: Phong[];
-    khachThueList: KhachThue[];
-    toaNhaList: ToaNha[];
-  }>({ key: 'hop-dong-data', duration: 300000 }); // 5 phút
+  const hopDongCache = useCache<HopDong[]>({ key: CACHE_KEYS.hopDongList, duration: 300000 });
+  const phongCache = useCache<Phong[]>({ key: CACHE_KEYS.phongList, duration: 300000 });
+  const khachThueCache = useCache<KhachThue[]>({ key: CACHE_KEYS.khachThueList, duration: 300000 });
+  const toaNhaCache = useCache<ToaNha[]>({ key: CACHE_KEYS.toaNhaList, duration: 300000 });
 
   const [hopDongList, setHopDongList] = useState<HopDong[]>([]);
   const [phongList, setPhongList] = useState<Phong[]>([]);
@@ -81,14 +81,21 @@ export default function HopDongPage() {
     try {
       setLoading(true);
 
-      // Thử load từ cache trước (nếu không force refresh)
       if (!forceRefresh) {
-        const cachedData = cache.getCache();
-        if (cachedData) {
-          setHopDongList(cachedData.hopDongList || []);
-          setPhongList(cachedData.phongList || []);
-          setKhachThueList(cachedData.khachThueList || []);
-          setToaNhaList(cachedData.toaNhaList || []);
+        const cachedHopDongList = hopDongCache.getCache();
+        const cachedPhongList = phongCache.getCache();
+        const cachedKhachThueList = khachThueCache.getCache();
+        const cachedToaNhaList = toaNhaCache.getCache();
+        if (
+          cachedHopDongList &&
+          cachedPhongList &&
+          cachedKhachThueList &&
+          cachedToaNhaList
+        ) {
+          setHopDongList(cachedHopDongList);
+          setPhongList(cachedPhongList);
+          setKhachThueList(cachedKhachThueList);
+          setToaNhaList(cachedToaNhaList);
           setLoading(false);
           return;
         }
@@ -106,13 +113,10 @@ export default function HopDongPage() {
       setKhachThueList(khachThues);
       setToaNhaList(toaNhas);
 
-      // Lưu vào cache
-      cache.setCache({
-        hopDongList: hopDongs,
-        phongList: phongs,
-        khachThueList: khachThues,
-        toaNhaList: toaNhas,
-      });
+      hopDongCache.setCache(hopDongs);
+      phongCache.setCache(phongs);
+      khachThueCache.setCache(khachThues);
+      toaNhaCache.setCache(toaNhas);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -122,9 +126,9 @@ export default function HopDongPage() {
   };
 
   const handleRefresh = async () => {
-    cache.setIsRefreshing(true);
+    hopDongCache.setIsRefreshing(true);
     await fetchData(true); // Force refresh
-    cache.setIsRefreshing(false);
+    hopDongCache.setIsRefreshing(false);
     toast.success('Đã tải dữ liệu mới nhất');
   };
 
@@ -338,17 +342,29 @@ export default function HopDongPage() {
     router.push(`/dashboard/hop-dong/${hopDong._id}`);
   };
 
-  const handleView = (hopDong: HopDong) => {
-    setViewingHopDong(hopDong);
+  const handleView = async (hopDong: HopDong) => {
+    try {
+      if (!hopDong._id) {
+        setViewingHopDong(hopDong);
+        return;
+      }
+      const latestHopDong = await hopDongService.getById(hopDong._id);
+      setViewingHopDong(latestHopDong);
+    } catch (error) {
+      console.error('Error fetching hop dong detail:', error);
+      toast.error('Không thể tải chi tiết hợp đồng');
+    }
   };
 
   const handleDelete = async (id: string) => {
     try {
       await hopDongService.delete(id);
 
-      // Xóa cache
-      cache.clearCache();
-      setHopDongList(prev => prev.filter(hopDong => hopDong._id !== id));
+      invalidateEntityCaches('hop-dong');
+      await fetchData(true);
+      if (viewingHopDong?._id === id) {
+        setViewingHopDong(null);
+      }
       toast.success('Đã xóa hợp đồng thành công');
     } catch (error) {
       console.error('Error deleting hop dong:', error);
@@ -356,8 +372,16 @@ export default function HopDongPage() {
     }
   };
 
-  const handleDownload = async (hopDong: HopDong) => {
+  const handleDownload = async (initialHopDong: HopDong) => {
     try {
+      let hopDong = initialHopDong;
+      if (initialHopDong._id) {
+        hopDong = await hopDongService.getById(initialHopDong._id);
+      }
+      if (viewingHopDong?._id === hopDong._id) {
+        setViewingHopDong(hopDong);
+      }
+
       // Generate contract content
       const phongInfo = getPhongInfo(hopDong.phong);
       const nguoiDaiDien = getKhachThueName(hopDong.nguoiDaiDien);
@@ -959,16 +983,16 @@ export default function HopDongPage() {
     if (newEndDate) {
       setActionLoading(`giahan-${hopDong._id}`);
       try {
-        const result = await hopDongService.update(hopDong._id!, {
+        await hopDongService.update(hopDong._id!, {
           ngayKetThuc: new Date(newEndDate),
         });
 
-        // Xóa cache
-        cache.clearCache();
-        // Cập nhật state trực tiếp thay vì reload
-        setHopDongList(prev => prev.map(hd =>
-          hd._id === hopDong._id ? result : hd
-        ));
+        invalidateEntityCaches('hop-dong');
+        await fetchData(true);
+        if (viewingHopDong?._id === hopDong._id) {
+          const latestHopDong = await hopDongService.getById(hopDong._id!);
+          setViewingHopDong(latestHopDong);
+        }
         toast.success('Đã gia hạn hợp đồng thành công');
       } catch (error) {
         console.error('Error extending contract:', error);
@@ -983,16 +1007,16 @@ export default function HopDongPage() {
     if (confirm('Bạn có chắc chắn muốn hủy hợp đồng này?')) {
       setActionLoading(`huy-${hopDong._id}`);
       try {
-        const result = await hopDongService.update(hopDong._id!, {
+        await hopDongService.update(hopDong._id!, {
           trangThai: 'daHuy',
         });
 
-        // Xóa cache
-        cache.clearCache();
-        // Cập nhật state trực tiếp thay vì reload
-        setHopDongList(prev => prev.map(hd =>
-          hd._id === hopDong._id ? result : hd
-        ));
+        invalidateEntityCaches('hop-dong');
+        await fetchData(true);
+        if (viewingHopDong?._id === hopDong._id) {
+          const latestHopDong = await hopDongService.getById(hopDong._id!);
+          setViewingHopDong(latestHopDong);
+        }
         toast.success('Đã hủy hợp đồng thành công');
       } catch (error) {
         console.error('Error cancelling contract:', error);
@@ -1028,11 +1052,11 @@ export default function HopDongPage() {
             variant="outline"
             size="sm"
             onClick={handleRefresh}
-            disabled={cache.isRefreshing}
+            disabled={hopDongCache.isRefreshing}
             className="flex-1 sm:flex-none"
           >
-            <RefreshCw className={`h-4 w-4 sm:mr-2 ${cache.isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{cache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
+            <RefreshCw className={`h-4 w-4 sm:mr-2 ${hopDongCache.isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{hopDongCache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
           </Button>
           <Button size="sm" onClick={() => router.push('/dashboard/hop-dong/them-moi')} className="flex-1 sm:flex-none">
             <Plus className="h-4 w-4 sm:mr-2" />

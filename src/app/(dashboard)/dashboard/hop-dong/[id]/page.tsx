@@ -30,6 +30,7 @@ import { hopDongService } from '@/services/hopDongService';
 import { phongService } from '@/services/phongService';
 import { khachThueService } from '@/services/khachThueService';
 import { cn } from "@/lib/utils";
+import { invalidateEntityCaches } from '@/lib/cache-invalidation';
 import {
   Command,
   CommandEmpty,
@@ -210,8 +211,7 @@ export default function ChinhSuaHopDongPage() {
         ngayKetThuc: new Date(formData.ngayKetThuc),
       });
 
-      // Xóa cache để force refresh data
-      sessionStorage.removeItem('hop-dong-data');
+      invalidateEntityCaches('hop-dong');
       toast.success('Đã cập nhật hợp đồng thành công');
       router.replace('/dashboard/hop-dong');
       router.refresh();
@@ -754,4 +754,3 @@ export default function ChinhSuaHopDongPage() {
     </div>
   );
 }
-

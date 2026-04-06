@@ -30,6 +30,7 @@ import { hopDongService } from '@/services/hopDongService';
 import { phongService } from '@/services/phongService';
 import { khachThueService } from '@/services/khachThueService';
 import { toast } from 'sonner';
+import { invalidateEntityCaches } from '@/lib/cache-invalidation';
 
 // Helper functions
 const getPhongName = (phongId: string | any, phongList: Phong[]) => {
@@ -235,8 +236,7 @@ export default function ChinhSuaHoaDonPage() {
       
       await hoaDonService.update(hoaDonId, requestData as any);
 
-      // Xóa cache
-      sessionStorage.removeItem('hoa-don-data');
+      invalidateEntityCaches('hoa-don');
       toast.success('Hóa đơn đã được cập nhật thành công');
       router.replace('/dashboard/hoa-don');
       router.refresh();

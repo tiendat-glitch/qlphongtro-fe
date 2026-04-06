@@ -1,8 +1,10 @@
-import { useState, useCallback } from 'react';
+import { useCallback, useState } from 'react';
+import { BASE_CACHE_KEYS, CACHE_PREFIXES, LEGACY_CACHE_KEYS } from '@/lib/cache-keys';
+import { invalidateCacheByPrefixes, invalidateCacheKeys } from '@/lib/cache-invalidation';
 
 interface CacheConfig {
   key: string;
-  duration?: number; // milliseconds, mặc định 5 phút
+  duration?: number; // milliseconds, default 5 minutes
 }
 
 interface CachedData<T> {
@@ -10,26 +12,28 @@ interface CachedData<T> {
   data: T;
 }
 
+const canUseSessionStorage = () =>
+  typeof window !== 'undefined' && typeof window.sessionStorage !== 'undefined';
+
 export function useCache<T>(config: CacheConfig) {
-  const { key, duration = 300000 } = config; // 5 phút mặc định
+  const { key, duration = 300000 } = config; // default 5 minutes
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Get cached data
   const getCache = useCallback((): T | null => {
+    if (!canUseSessionStorage()) return null;
+
     try {
-      const cached = sessionStorage.getItem(key);
+      const cached = window.sessionStorage.getItem(key);
       if (!cached) return null;
 
       const parsed: CachedData<T> = JSON.parse(cached);
       const now = Date.now();
 
-      // Kiểm tra cache còn hiệu lực không
       if (now - parsed.timestamp < duration) {
         return parsed.data;
       }
 
-      // Cache hết hạn, xóa luôn
-      sessionStorage.removeItem(key);
+      window.sessionStorage.removeItem(key);
       return null;
     } catch (error) {
       console.error('Error reading cache:', error);
@@ -37,43 +41,43 @@ export function useCache<T>(config: CacheConfig) {
     }
   }, [key, duration]);
 
-  // Set cached data
   const setCache = useCallback((data: T) => {
+    if (!canUseSessionStorage()) return;
+
     try {
       const cacheData: CachedData<T> = {
         timestamp: Date.now(),
         data,
       };
-      sessionStorage.setItem(key, JSON.stringify(cacheData));
+      window.sessionStorage.setItem(key, JSON.stringify(cacheData));
     } catch (error) {
       console.error('Error setting cache:', error);
     }
   }, [key]);
 
-  // Clear cache
   const clearCache = useCallback(() => {
-    sessionStorage.removeItem(key);
+    invalidateCacheKeys([key]);
   }, [key]);
 
-  // Clear all dashboard caches
+  const clearCaches = useCallback((keys: string[]) => {
+    invalidateCacheKeys(keys);
+  }, []);
+
+  const clearByPrefixes = useCallback((prefixes: string[]) => {
+    invalidateCacheByPrefixes(prefixes);
+  }, []);
+
   const clearAllCaches = useCallback(() => {
-    const keys = [
-      'hop-dong-data',
-      'hoa-don-data',
-      'phong-data',
-      'khach-thue-data',
-      'toa-nha-data',
-      'thanh-toan-data',
-      'su-co-data',
-      'tai-khoan-data',
-    ];
-    keys.forEach(k => sessionStorage.removeItem(k));
+    invalidateCacheKeys([...BASE_CACHE_KEYS, ...LEGACY_CACHE_KEYS]);
+    invalidateCacheByPrefixes(Object.values(CACHE_PREFIXES));
   }, []);
 
   return {
     getCache,
     setCache,
     clearCache,
+    clearCaches,
+    clearByPrefixes,
     clearAllCaches,
     isRefreshing,
     setIsRefreshing,

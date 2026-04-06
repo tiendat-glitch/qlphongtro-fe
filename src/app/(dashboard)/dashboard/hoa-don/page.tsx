@@ -53,6 +53,8 @@ import { hopDongService } from '@/services/hopDongService';
 import { phongService } from '@/services/phongService';
 import { khachThueService } from '@/services/khachThueService';
 import { thanhToanService } from '@/services/thanhToanService';
+import { CACHE_KEYS } from '@/lib/cache-keys';
+import { invalidateEntityCaches } from '@/lib/cache-invalidation';
 
 // Helper functions for form and dialogs
 const getPhongName = (phongId: string | { _id?: string; maPhong: string }, phongList: Phong[]) => {
@@ -88,12 +90,10 @@ const formatCurrency = (amount: number) => {
 
 export default function HoaDonPage() {
   const router = useRouter();
-  const cache = useCache<{
-    hoaDonList: HoaDon[];
-    hopDongList: HopDong[];
-    phongList: Phong[];
-    khachThueList: KhachThue[];
-  }>({ key: 'hoa-don-data', duration: 300000 }); // 5 phút
+  const hoaDonCache = useCache<HoaDon[]>({ key: CACHE_KEYS.hoaDonList, duration: 300000 });
+  const hopDongCache = useCache<HopDong[]>({ key: CACHE_KEYS.hopDongList, duration: 300000 });
+  const phongCache = useCache<Phong[]>({ key: CACHE_KEYS.phongList, duration: 300000 });
+  const khachThueCache = useCache<KhachThue[]>({ key: CACHE_KEYS.khachThueList, duration: 300000 });
   
   const [hoaDonList, setHoaDonList] = useState<HoaDon[]>([]);
   const [hopDongList, setHopDongList] = useState<HopDong[]>([]);
@@ -129,12 +129,20 @@ export default function HoaDonPage() {
       setLoading(true);
       
       if (!forceRefresh) {
-        const cachedData = cache.getCache();
-        if (cachedData) {
-          setHoaDonList(cachedData.hoaDonList || []);
-          setHopDongList(cachedData.hopDongList || []);
-          setPhongList(cachedData.phongList || []);
-          setKhachThueList(cachedData.khachThueList || []);
+        const cachedHoaDonList = hoaDonCache.getCache();
+        const cachedHopDongList = hopDongCache.getCache();
+        const cachedPhongList = phongCache.getCache();
+        const cachedKhachThueList = khachThueCache.getCache();
+        if (
+          cachedHoaDonList &&
+          cachedHopDongList &&
+          cachedPhongList &&
+          cachedKhachThueList
+        ) {
+          setHoaDonList(cachedHoaDonList);
+          setHopDongList(cachedHopDongList);
+          setPhongList(cachedPhongList);
+          setKhachThueList(cachedKhachThueList);
           setLoading(false);
           return;
         }
@@ -152,12 +160,10 @@ export default function HoaDonPage() {
       setPhongList(phongs);
       setKhachThueList(khachThues);
       
-      cache.setCache({
-        hoaDonList: hoaDons,
-        hopDongList: hopDongs,
-        phongList: phongs,
-        khachThueList: khachThues,
-      });
+      hoaDonCache.setCache(hoaDons);
+      hopDongCache.setCache(hopDongs);
+      phongCache.setCache(phongs);
+      khachThueCache.setCache(khachThues);
 
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -167,9 +173,9 @@ export default function HoaDonPage() {
   };
 
   const handleRefresh = async () => {
-    cache.setIsRefreshing(true);
+    hoaDonCache.setIsRefreshing(true);
     await fetchData(true); // Force refresh
-    cache.setIsRefreshing(false);
+    hoaDonCache.setIsRefreshing(false);
     toast.success('Đã tải dữ liệu mới nhất');
   };
 
@@ -216,8 +222,8 @@ export default function HoaDonPage() {
     if (!confirm('Bạn có chắc chắn muốn xóa hóa đơn này?')) return;
     try {
       await hoaDonService.delete(id);
-      cache.clearCache();
-      setHoaDonList(prev => prev.filter(hoaDon => hoaDon._id !== id));
+      invalidateEntityCaches('hoa-don');
+      await fetchData(true);
       toast.success('Hóa đơn đã được xóa thành công');
     } catch (error: any) {
       console.error('Error deleting hoa don:', error);
@@ -232,8 +238,8 @@ export default function HoaDonPage() {
       const deletePromises = ids.map(id => hoaDonService.delete(id));
       await Promise.allSettled(deletePromises);
       
-      cache.clearCache();
-      setHoaDonList(prev => prev.filter(hoaDon => !ids.includes(hoaDon._id!)));
+      invalidateEntityCaches('hoa-don');
+      await fetchData(true);
       toast.success(`Đã xử lý xóa ${ids.length} hóa đơn`);
     } catch (error: any) {
       console.error('Error deleting multiple hoa don:', error);
@@ -562,11 +568,11 @@ export default function HoaDonPage() {
             variant="outline"
             size="sm"
             onClick={handleRefresh}
-            disabled={cache.isRefreshing}
+            disabled={hoaDonCache.isRefreshing}
             className="flex-1 sm:flex-none"
           >
-            <RefreshCw className={`h-4 w-4 sm:mr-2 ${cache.isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{cache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
+            <RefreshCw className={`h-4 w-4 sm:mr-2 ${hoaDonCache.isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{hoaDonCache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
           </Button>
           <Button size="sm" onClick={() => router.push('/dashboard/hoa-don/them-moi')} className="flex-1 sm:flex-none">
             <Plus className="h-4 w-4 sm:mr-2" />
@@ -990,15 +996,10 @@ export default function HoaDonPage() {
             <PaymentForm 
               hoaDon={paymentHoaDon}
               onClose={() => setIsPaymentDialogOpen(false)}
-              onSuccess={(updatedHoaDon) => {
+              onSuccess={async () => {
                 setIsPaymentDialogOpen(false);
-                // Chỉ update dòng hóa đơn đó thay vì load lại toàn bộ
-                if (updatedHoaDon) {
-                  setHoaDonList(prev => prev.map(hd => 
-                    hd._id === updatedHoaDon._id ? updatedHoaDon : hd
-                  ));
-                  cache.clearCache(); // Xóa cache để lần sau load mới
-                }
+                invalidateEntityCaches('thanh-toan');
+                await fetchData(true);
               }}
             />
           )}
@@ -1248,4 +1249,3 @@ function PaymentForm({
     </div>
   );
 }
-

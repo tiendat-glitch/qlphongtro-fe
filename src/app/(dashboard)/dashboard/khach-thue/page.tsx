@@ -47,9 +47,14 @@ import { CCCDUpload } from '@/components/ui/cccd-upload';
 import { DeleteConfirmPopover } from '@/components/ui/delete-confirm-popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { CACHE_KEYS } from '@/lib/cache-keys';
+import { invalidateEntityCaches } from '@/lib/cache-invalidation';
 
 export default function KhachThuePage() {
-  const cache = useCache<{ khachThueList: KhachThue[] }>({ key: 'khach-thue-data', duration: 300000 });
+  const khachThueCache = useCache<{ khachThueList: KhachThue[] }>({
+    key: CACHE_KEYS.khachThueList,
+    duration: 300000
+  });
   const [khachThueList, setKhachThueList] = useState<KhachThue[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -73,7 +78,7 @@ export default function KhachThuePage() {
       
       // Thử load từ cache trước
       if (!forceRefresh) {
-        const cachedData = cache.getCache();
+        const cachedData = khachThueCache.getCache();
         if (cachedData) {
           setKhachThueList(cachedData.khachThueList || []);
           setLoading(false);
@@ -89,7 +94,7 @@ export default function KhachThuePage() {
       
       // Lưu cache với data mới
       if (khachThueData.length > 0) {
-        cache.setCache({ khachThueList: khachThueData });
+        khachThueCache.setCache({ khachThueList: khachThueData });
       }
     } catch (error) {
       console.error('Error fetching khach thue:', error);
@@ -99,9 +104,9 @@ export default function KhachThuePage() {
   };
 
   const handleRefresh = async () => {
-    cache.setIsRefreshing(true);
+    khachThueCache.setIsRefreshing(true);
     await fetchKhachThue(true);
-    cache.setIsRefreshing(false);
+    khachThueCache.setIsRefreshing(false);
     toast.success('Đã tải dữ liệu mới nhất');
   };
 
@@ -129,8 +134,8 @@ export default function KhachThuePage() {
       setActionLoading(`delete-${id}`);
       try {
         await khachThueService.delete(id);
-        cache.clearCache();
-        setKhachThueList(prev => prev.filter(khachThue => khachThue._id !== id));
+        invalidateEntityCaches('khach-thue');
+        await fetchKhachThue(true);
         toast.success('Xóa khách thuê thành công!');
       } catch (error: any) {
         console.error('Error deleting khach thue:', error);
@@ -167,11 +172,11 @@ export default function KhachThuePage() {
             variant="outline"
             size="sm"
             onClick={handleRefresh}
-            disabled={cache.isRefreshing}
+            disabled={khachThueCache.isRefreshing}
             className="flex-1 sm:flex-none"
           >
-            <RefreshCw className={`h-4 w-4 sm:mr-2 ${cache.isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{cache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
+            <RefreshCw className={`h-4 w-4 sm:mr-2 ${khachThueCache.isRefreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{khachThueCache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
           </Button>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -194,23 +199,10 @@ export default function KhachThuePage() {
             <KhachThueForm 
               khachThue={editingKhachThue}
               onClose={() => setIsDialogOpen(false)}
-              onSuccess={(newKhachThue) => {
-                cache.clearCache();
+              onSuccess={async () => {
+                invalidateEntityCaches('khach-thue');
                 setIsDialogOpen(false);
-                if (newKhachThue) {
-                  if (editingKhachThue) {
-                    // Cập nhật khách thuê hiện có
-                    setKhachThueList(prev => prev.map(kt => 
-                      kt._id === editingKhachThue._id ? newKhachThue : kt
-                    ));
-                  } else {
-                    // Thêm khách thuê mới
-                    setKhachThueList(prev => [newKhachThue, ...prev]);
-                  }
-                } else {
-                  // Fallback: refresh data nếu không có dữ liệu trả về
-                  fetchKhachThue();
-                }
+                await fetchKhachThue(true);
                 toast.success(editingKhachThue ? 'Cập nhật khách thuê thành công!' : 'Thêm khách thuê thành công!');
               }}
               isSubmitting={isFormSubmitting}
@@ -678,5 +670,4 @@ function KhachThueForm({
     </form>
   );
 }
-
 

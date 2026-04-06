@@ -54,12 +54,12 @@ import { PhongImageUpload } from '@/components/ui/phong-image-upload';
 import { DeleteConfirmPopover } from '@/components/ui/delete-confirm-popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
+import { CACHE_KEYS } from '@/lib/cache-keys';
+import { invalidateEntityCaches } from '@/lib/cache-invalidation';
 
 export default function PhongPage() {
-  const cache = useCache<{
-    phongList: Phong[];
-    toaNhaList: ToaNha[];
-  }>({ key: 'phong-data', duration: 300000 }); // 5 phút
+  const phongCache = useCache<Phong[]>({ key: CACHE_KEYS.phongList, duration: 300000 });
+  const toaNhaCache = useCache<ToaNha[]>({ key: CACHE_KEYS.toaNhaList, duration: 300000 });
   
   const [phongList, setPhongList] = useState<Phong[]>([]);
   const [toaNhaList, setToaNhaList] = useState<ToaNha[]>([]);
@@ -82,19 +82,18 @@ export default function PhongPage() {
 
   useEffect(() => {
     fetchPhong();
-    fetchToaNha();
   }, []);
 
   const fetchPhong = async (forceRefresh = false) => {
     try {
       setLoading(true);
       
-      // Thử load từ cache trước (nếu không force refresh)
       if (!forceRefresh) {
-        const cachedData = cache.getCache();
-        if (cachedData) {
-          setPhongList(cachedData.phongList || []);
-          setToaNhaList(cachedData.toaNhaList || []);
+        const cachedPhongList = phongCache.getCache();
+        const cachedToaNhaList = toaNhaCache.getCache();
+        if (cachedPhongList && cachedToaNhaList) {
+          setPhongList(cachedPhongList);
+          setToaNhaList(cachedToaNhaList);
           setLoading(false);
           return;
         }
@@ -104,21 +103,13 @@ export default function PhongPage() {
       if (selectedToaNha && selectedToaNha !== 'all') filterObj.toaNha_id = selectedToaNha;
       if (selectedTrangThai && selectedTrangThai !== 'all') filterObj.trangThai = selectedTrangThai;
 
-      // Fetch phong
       const phongData = await phongService.getAll(filterObj);
-      setPhongList(phongData);
-      
-      // Fetch toa nha
       const toaNhaData = await toaNhaService.getAll();
+      setPhongList(phongData);
       setToaNhaList(toaNhaData);
       
-      // Lưu cache với data mới
-      if (phongData.length > 0 || toaNhaData.length > 0) {
-        cache.setCache({
-          phongList: phongData,
-          toaNhaList: toaNhaData,
-        });
-      }
+      phongCache.setCache(phongData);
+      toaNhaCache.setCache(toaNhaData);
     } catch (error) {
       console.error('Error fetching data:', error);
     } finally {
@@ -126,19 +117,10 @@ export default function PhongPage() {
     }
   };
 
-  const fetchToaNha = async () => {
-    try {
-      const toaNhaData = await toaNhaService.getAll();
-      setToaNhaList(toaNhaData);
-    } catch (error) {
-      console.error('Error fetching toa nha:', error);
-    }
-  };
-
   const handleRefresh = async () => {
-    cache.setIsRefreshing(true);
+    phongCache.setIsRefreshing(true);
     await fetchPhong(true); // Force refresh
-    cache.setIsRefreshing(false);
+    phongCache.setIsRefreshing(false);
     toast.success('Đã tải dữ liệu mới nhất');
   };
 
@@ -162,8 +144,8 @@ export default function PhongPage() {
   const handleDelete = async (id: string) => {
     try {
       await phongService.delete(id);
-      cache.clearCache();
-      setPhongList(prev => prev.filter(phong => phong._id !== id));
+      invalidateEntityCaches('phong');
+      await fetchPhong(true);
       toast.success('Xóa phòng thành công!');
     } catch (error: any) {
       console.error('Error deleting phong:', error);
@@ -220,10 +202,10 @@ export default function PhongPage() {
             variant="outline"
             size="sm"
             onClick={handleRefresh}
-            disabled={cache.isRefreshing}
+            disabled={phongCache.isRefreshing}
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${cache.isRefreshing ? 'animate-spin' : ''}`} />
-            {cache.isRefreshing ? 'Đang tải...' : 'Tải mới'}
+            <RefreshCw className={`h-4 w-4 mr-2 ${phongCache.isRefreshing ? 'animate-spin' : ''}`} />
+            {phongCache.isRefreshing ? 'Đang tải...' : 'Tải mới'}
           </Button>
      
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -247,10 +229,10 @@ export default function PhongPage() {
                 phong={editingPhong}
                 toaNhaList={toaNhaList}
                 onClose={() => setIsDialogOpen(false)}
-                onSuccess={() => {
-                  cache.clearCache();
+                onSuccess={async () => {
+                  invalidateEntityCaches('phong');
                   setIsDialogOpen(false);
-                  fetchPhong(true);
+                  await fetchPhong(true);
                   toast.success(editingPhong ? 'Cập nhật phòng thành công!' : 'Thêm phòng thành công!');
                 }}
               />
