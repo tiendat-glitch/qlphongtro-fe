@@ -58,6 +58,62 @@ import { SuCoImageUpload } from '@/components/ui/su-co-image-upload';
 import { DeleteConfirmPopover } from '@/components/ui/delete-confirm-popover';
 import { SuCoDataTable } from './table';
 
+type IncidentTypeMap = Partial<Record<string, SuCo['loaiSuCo']>>;
+
+type IncidentTypeUpdate = {
+  id: string;
+  loaiSuCo: SuCo['loaiSuCo'];
+};
+
+const INCIDENT_TYPE_OVERRIDES_STORAGE_KEY = 'su-co-incident-type-overrides';
+const INCIDENT_TYPE_VALUES: SuCo['loaiSuCo'][] = ['dienNuoc', 'noiThat', 'vesinh', 'anNinh', 'khac'];
+
+const isIncidentTypeValue = (value: unknown): value is SuCo['loaiSuCo'] => (
+  typeof value === 'string' && INCIDENT_TYPE_VALUES.includes(value as SuCo['loaiSuCo'])
+);
+
+const loadIncidentTypeOverrides = (): IncidentTypeMap => {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+
+  const storedMap = window.localStorage.getItem(INCIDENT_TYPE_OVERRIDES_STORAGE_KEY);
+  if (!storedMap) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(storedMap);
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return {};
+    }
+
+    const safeMap: IncidentTypeMap = {};
+    for (const [id, loaiSuCo] of Object.entries(parsed as Record<string, unknown>)) {
+      if (isIncidentTypeValue(loaiSuCo)) {
+        safeMap[id] = loaiSuCo;
+      }
+    }
+
+    return safeMap;
+  } catch (error) {
+    console.error('Failed to parse incident type overrides from localStorage', error);
+    return {};
+  }
+};
+
+const saveIncidentTypeOverrides = (overrides: IncidentTypeMap) => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(INCIDENT_TYPE_OVERRIDES_STORAGE_KEY, JSON.stringify(overrides));
+  } catch (error) {
+    console.error('Failed to save incident type overrides to localStorage', error);
+  }
+};
+
 export default function SuCoPage() {
   const cache = useCache<{
     suCoList: SuCo[];
@@ -75,7 +131,7 @@ export default function SuCoPage() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
-  const [incidentTypeOverrides, setIncidentTypeOverrides] = useState<Partial<Record<string, SuCo['loaiSuCo']>>>({});
+  const [incidentTypeOverrides, setIncidentTypeOverrides] = useState<IncidentTypeMap>({});
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSuCo, setEditingSuCo] = useState<SuCo | null>(null);
 
@@ -85,6 +141,10 @@ export default function SuCoPage() {
 
   useEffect(() => {
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    setIncidentTypeOverrides(loadIncidentTypeOverrides());
   }, []);
 
   const fetchData = async (forceRefresh = false) => {
@@ -145,6 +205,30 @@ export default function SuCoPage() {
     }
 
     return incidentTypeOverrides[suCo._id] ?? suCo.loaiSuCo;
+  };
+
+  const upsertIncidentTypeOverride = (incidentId: string, loaiSuCo: SuCo['loaiSuCo']) => {
+    setIncidentTypeOverrides(prev => {
+      const next = {
+        ...prev,
+        [incidentId]: loaiSuCo,
+      };
+      saveIncidentTypeOverrides(next);
+      return next;
+    });
+  };
+
+  const removeIncidentTypeOverride = (incidentId: string) => {
+    setIncidentTypeOverrides(prev => {
+      if (!prev[incidentId]) {
+        return prev;
+      }
+
+      const next = { ...prev };
+      delete next[incidentId];
+      saveIncidentTypeOverrides(next);
+      return next;
+    });
   };
 
   const filteredSuCo = suCoList.filter(suCo => {
@@ -234,27 +318,12 @@ export default function SuCoPage() {
       await suCoService.delete(id);
       cache.clearCache();
       setSuCoList(prev => prev.filter(suCo => suCo._id !== id));
-      setIncidentTypeOverrides(prev => {
-        if (!prev[id]) {
-          return prev;
-        }
-
-        const next = { ...prev };
-        delete next[id];
-        return next;
-      });
+      removeIncidentTypeOverride(id);
       toast.success('Xóa sự cố thành công');
     } catch (error: any) {
       console.error('Error deleting su co:', error);
       toast.error(error.message || 'Có lỗi xảy ra khi xóa sự cố');
     }
-  };
-
-  const handleIncidentTypeChange = (id: string, newType: SuCo['loaiSuCo']) => {
-    setIncidentTypeOverrides(prev => ({
-      ...prev,
-      [id]: newType,
-    }));
   };
 
   const handleStatusChange = async (id: string, newStatus: string) => {
@@ -329,7 +398,10 @@ export default function SuCoPage() {
               hopDongList={hopDongList}
               getKhachThueName={getKhachThueName}
               onClose={() => setIsDialogOpen(false)}
-              onSuccess={() => {
+              onSuccess={(incidentTypeUpdate?: IncidentTypeUpdate) => {
+                if (incidentTypeUpdate?.id) {
+                  upsertIncidentTypeOverride(incidentTypeUpdate.id, incidentTypeUpdate.loaiSuCo);
+                }
                 cache.clearCache();
                 setIsDialogOpen(false);
                 fetchData(true);
@@ -406,7 +478,6 @@ export default function SuCoPage() {
             onDelete={handleDelete}
             onStatusChange={handleStatusChange}
             typeOverrides={incidentTypeOverrides}
-            onIncidentTypeChange={handleIncidentTypeChange}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
             statusFilter={statusFilter}
@@ -580,7 +651,7 @@ function SuCoForm({
   hopDongList: any[];
   getKhachThueName: (khachThue: any) => string;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (incidentTypeUpdate?: IncidentTypeUpdate) => void;
 }) {
   const [formData, setFormData] = useState({
     phong: (typeof suCo?.phong === 'object' ? suCo.phong._id : suCo?.phong) || '',
@@ -629,13 +700,27 @@ function SuCoForm({
         ngayBaoCao: suCo ? suCo.ngayBaoCao : new Date().toISOString(),
       };
 
+      let incidentTypeUpdate: IncidentTypeUpdate | undefined;
+
       if (suCo) {
         await suCoService.update(suCo._id as string, submitData);
+        if (suCo._id) {
+          incidentTypeUpdate = {
+            id: suCo._id,
+            loaiSuCo: formData.loaiSuCo as SuCo['loaiSuCo'],
+          };
+        }
       } else {
-        await suCoService.create(submitData);
+        const createdIncident = await suCoService.create(submitData);
+        if (createdIncident?._id) {
+          incidentTypeUpdate = {
+            id: createdIncident._id,
+            loaiSuCo: formData.loaiSuCo as SuCo['loaiSuCo'],
+          };
+        }
       }
       toast.success(suCo ? 'Cập nhật sự cố thành công' : 'Báo cáo sự cố thành công');
-      onSuccess();
+      onSuccess(incidentTypeUpdate);
     } catch (error) {
       console.error('Error submitting form:', error);
       toast.error('Có lỗi xảy ra khi gửi form');

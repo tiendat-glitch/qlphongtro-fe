@@ -18,9 +18,14 @@ export const hopDongService = {
     },
 
     create: async (data: Partial<HopDong>) => {
+        const payload = { ...data };
+        if (!payload.maHopDong?.trim()) {
+            delete payload.maHopDong;
+        }
+
         const res = await apiClient<any>('/hop-dong', {
             method: 'POST',
-            body: JSON.stringify(data),
+            body: JSON.stringify(payload),
         });
         return { ...res, _id: res.id.toString() } as HopDong;
     },

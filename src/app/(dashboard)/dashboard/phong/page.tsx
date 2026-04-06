@@ -390,7 +390,7 @@ export default function PhongPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 gap-3">
-            {filteredPhong.map((phong) => {
+            {filteredPhong.map((phong, index) => {
               const getTrangThaiColor = (trangThai: string) => {
                 switch (trangThai) {
                   case 'trong': return 'bg-green-100 text-green-800';
@@ -412,7 +412,7 @@ export default function PhongPage() {
               };
 
               return (
-                <Card key={phong._id} className="hover:shadow-md transition-shadow">
+                <Card key={`${phong._id ?? (phong as any).id ?? 'phong'}-${index}`} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-3">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">

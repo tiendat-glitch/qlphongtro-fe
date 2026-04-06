@@ -193,7 +193,6 @@ type SuCoTableProps = {
   onDelete: (id: string) => void
   onStatusChange: (id: string, newStatus: string) => void
   typeOverrides?: Partial<Record<string, SuCo['loaiSuCo']>>
-  onIncidentTypeChange?: (id: string, newType: SuCo['loaiSuCo']) => void
 }
 
 const getPhongName = (phong: string | { maPhong: string }, phongList: Phong[]) => {
@@ -306,28 +305,7 @@ const createColumns = (props: SuCoTableProps): ColumnDef<SuCo>[] => [
     cell: ({ row }) => {
       const suCo = row.original
       const currentType = getResolvedIncidentType(suCo, props.typeOverrides)
-
-      if (!suCo._id || !props.onIncidentTypeChange) {
-        return getTypeBadge(currentType)
-      }
-
-      return (
-        <Select
-          value={currentType}
-          onValueChange={(value) => props.onIncidentTypeChange?.(suCo._id!, value as SuCo['loaiSuCo'])}
-        >
-          <SelectTrigger className="w-[150px] h-8">
-            <SelectValue placeholder="Chọn loại" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="dienNuoc">Điện nước</SelectItem>
-            <SelectItem value="noiThat">Nội thất</SelectItem>
-            <SelectItem value="vesinh">Vệ sinh</SelectItem>
-            <SelectItem value="anNinh">An ninh</SelectItem>
-            <SelectItem value="khac">Khác</SelectItem>
-          </SelectContent>
-        </Select>
-      )
+      return getTypeBadge(currentType)
     },
   },
   {
@@ -764,4 +742,3 @@ export function SuCoDataTable(props: SuCoDataTableProps) {
     </div>
   )
 }
-

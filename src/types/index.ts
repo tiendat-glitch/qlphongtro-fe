@@ -216,6 +216,17 @@ export interface ThanhToan {
   ngayTao: Date | string;
 }
 
+export interface ThanhToanCreateRequest {
+  hoaDon_id: number;
+  soTien: number;
+  phuongThuc: 'tienMat' | 'chuyenKhoan' | 'viDienTu';
+  ngayThanhToan: Date | string;
+  ghiChu?: string;
+  anhBienLai?: string;
+  thongTinChuyenKhoan_nganHang?: string | null;
+  thongTinChuyenKhoan_soGiaoDich?: string | null;
+}
+
 export interface SuCo {
   _id?: string;
   phong: string | { _id: string; maPhong: string };

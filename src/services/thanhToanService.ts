@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient';
-import { ThanhToan } from '@/types';
+import { ThanhToan, ThanhToanCreateRequest } from '@/types';
 
 type RawThanhToan = Partial<ThanhToan> & {
     id?: number | string;
@@ -86,7 +86,7 @@ export const thanhToanService = {
         return normalizeThanhToan(data);
     },
 
-    create: async (data: Partial<ThanhToan>) => {
+    create: async (data: ThanhToanCreateRequest) => {
         const res = await apiClient<{thanhToan: any, hoaDon: any}>('/thanh-toan', {
             method: 'POST',
             body: JSON.stringify(data),

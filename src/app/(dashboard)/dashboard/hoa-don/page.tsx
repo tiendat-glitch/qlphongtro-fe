@@ -44,7 +44,7 @@ import {
   Edit,
   Trash2
 } from 'lucide-react';
-import { HoaDon, HopDong, Phong, KhachThue } from '@/types';
+import { HoaDon, HopDong, Phong, KhachThue, ThanhToanCreateRequest } from '@/types';
 import { toast } from 'sonner';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
@@ -1034,22 +1034,54 @@ function PaymentForm({
     setSubmitting(true);
     
     try {
-      const requestData = {
-        hoaDonId: hoaDon._id,
-        soTien: formData.soTien,
+      type PaymentMethod = ThanhToanCreateRequest['phuongThuc'];
+
+      const rawHoaDonId = (hoaDon as HoaDon & { id?: number | string }).id ?? hoaDon._id;
+      const normalizedHoaDonId =
+        typeof rawHoaDonId === 'number' ? rawHoaDonId : Number(rawHoaDonId);
+
+      if (!Number.isFinite(normalizedHoaDonId)) {
+        toast.error('ID hóa đơn không hợp lệ');
+        return;
+      }
+
+      const soTien = Number(formData.soTien);
+      if (!Number.isFinite(soTien) || soTien <= 0) {
+        toast.error('Số tiền thanh toán không hợp lệ');
+        return;
+      }
+
+      const allowedMethods: PaymentMethod[] = ['tienMat', 'chuyenKhoan', 'viDienTu'];
+      if (!allowedMethods.includes(formData.phuongThuc)) {
+        toast.error('Phương thức thanh toán không hợp lệ');
+        return;
+      }
+
+      const ngayThanhToan = formData.ngayThanhToan?.trim();
+      const isDateFormatValid = /^\d{4}-\d{2}-\d{2}$/.test(ngayThanhToan);
+      if (!ngayThanhToan || !isDateFormatValid || Number.isNaN(new Date(ngayThanhToan).getTime())) {
+        toast.error('Ngày thanh toán không hợp lệ');
+        return;
+      }
+
+      const requestData: ThanhToanCreateRequest = {
+        hoaDon_id: normalizedHoaDonId,
+        soTien,
         phuongThuc: formData.phuongThuc,
-        thongTinChuyenKhoan: formData.phuongThuc === 'chuyenKhoan' ? {
-          nganHang: formData.nganHang,
-          soGiaoDich: formData.soGiaoDich
-        } : undefined,
-        ngayThanhToan: formData.ngayThanhToan,
+        ngayThanhToan,
         ghiChu: formData.ghiChu,
-        anhBienLai: formData.anhBienLai
+        anhBienLai: formData.anhBienLai,
+        ...(formData.phuongThuc === 'chuyenKhoan'
+          ? {
+              thongTinChuyenKhoan_nganHang: formData.nganHang.trim() || null,
+              thongTinChuyenKhoan_soGiaoDich: formData.soGiaoDich.trim() || null,
+            }
+          : {}),
       };
       
       console.log('Submitting payment:', requestData);
       
-      const result = await thanhToanService.create(requestData as any);
+      const result = await thanhToanService.create(requestData);
 
       toast.success('Thanh toán đã được tạo thành công');
       onSuccess(result.hoaDon as any); // Truyền hóa đơn đã cập nhật

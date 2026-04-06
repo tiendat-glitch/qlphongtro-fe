@@ -50,7 +50,6 @@ export default function ThemMoiHopDongPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
-    maHopDong: '',
     phong: '',
     khachThueId: [] as string[],
     nguoiDaiDien: '',
@@ -202,15 +201,22 @@ export default function ThemMoiHopDongPage() {
     setSubmitting(true);
     
     try {
-      await hopDongService.create({
+      const payload: Partial<HopDong> = {
         ...formData,
         ngayBatDau: new Date(formData.ngayBatDau),
         ngayKetThuc: new Date(formData.ngayKetThuc),
-      });
+      };
+
+      const createdHopDong = await hopDongService.create(payload);
+      const createdMaHopDong = createdHopDong?.maHopDong?.trim();
 
       // Xóa cache để force refresh data
       sessionStorage.removeItem('hop-dong-data');
-      toast.success('Đã tạo hợp đồng thành công');
+      toast.success(
+        createdMaHopDong
+          ? `Đã tạo hợp đồng ${createdMaHopDong} thành công`
+          : 'Đã tạo hợp đồng thành công'
+      );
       router.replace('/dashboard/hop-dong');
       router.refresh();
     } catch (error: any) {
@@ -260,19 +266,11 @@ export default function ThemMoiHopDongPage() {
         </CardHeader>
         <CardContent className="p-4 md:p-6">
           <form onSubmit={handleSubmit} className="space-y-4 md:space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="maHopDong" className="text-xs md:text-sm">Mã hợp đồng</Label>
-                <Input
-                  id="maHopDong"
-                  value={formData.maHopDong}
-                  onChange={(e) => setFormData(prev => ({ ...prev, maHopDong: e.target.value.toUpperCase() }))}
-                  placeholder="HD001"
-                  required
-                  className="text-sm"
-                />
-              </div>
-              
+            <div className="rounded-md border border-dashed bg-muted/30 px-3 py-2 text-xs md:text-sm text-muted-foreground">
+              Mã hợp đồng sẽ được hệ thống tự động tạo sau khi lưu.
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               <div className="space-y-2">
                 <Label className="text-xs md:text-sm">Phòng *</Label>
                 <Popover open={openPhong} onOpenChange={setOpenPhong}>

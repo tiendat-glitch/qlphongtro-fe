@@ -215,6 +215,111 @@ export default function HopDongPage() {
     }).format(amount);
   };
 
+  const safeDisplay = (value: unknown, fallback = 'Chưa cập nhật') => {
+    if (value === null || value === undefined) return fallback;
+    if (value instanceof Date) return value.toLocaleDateString('vi-VN');
+    const text = String(value).trim();
+    return text ? text : fallback;
+  };
+
+  const formatDateValue = (value: unknown, fallback = 'Chưa cập nhật') => {
+    if (!value) return fallback;
+    const date = new Date(value as string | number | Date);
+    if (Number.isNaN(date.getTime())) return safeDisplay(value, fallback);
+    return date.toLocaleDateString('vi-VN');
+  };
+
+  const toComparableId = (value: unknown) => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'object') {
+      const obj = value as Record<string, unknown>;
+      if (obj._id !== undefined && obj._id !== null) return String(obj._id);
+      if (obj.id !== undefined && obj.id !== null) return String(obj.id);
+      return '';
+    }
+    return String(value);
+  };
+
+  const formatAddressObject = (address: unknown) => {
+    if (!address || typeof address !== 'object') return '';
+    const info = address as Record<string, unknown>;
+    const parts = [info.soNha, info.duong, info.phuong, info.quan, info.thanhPho]
+      .map(item => (item === null || item === undefined ? '' : String(item).trim()))
+      .filter(Boolean);
+    return parts.join(', ');
+  };
+
+  const tienNghiLabels: Record<string, string> = {
+    dieuhoa: 'Điều hòa',
+    nonglanh: 'Nóng lạnh',
+    tulanh: 'Tủ lạnh',
+    giuong: 'Giường',
+    tuquanao: 'Tủ quần áo',
+    banlamviec: 'Bàn làm việc',
+    ghe: 'Ghế',
+    tivi: 'TV',
+    wifi: 'WiFi',
+    maygiat: 'Máy giặt',
+    bep: 'Bếp',
+    noi: 'Nồi',
+    chen: 'Chén',
+    bat: 'Bát',
+  };
+
+  const getPhongObjectForContract = (phong: HopDong['phong']) => {
+    if (typeof phong === 'object' && phong) {
+      const phongObject = phong as Phong;
+      const phongId = toComparableId((phong as { _id?: unknown; id?: unknown })._id ?? (phong as { id?: unknown }).id);
+      if (!phongId) return phongObject;
+      return phongList.find(p => toComparableId(p._id) === phongId) || phongObject;
+    }
+
+    const phongId = toComparableId(phong);
+    return phongList.find(p => toComparableId(p._id) === phongId) || null;
+  };
+
+  const getToaNhaObjectForContract = (phong: HopDong['phong']) => {
+    const phongObject = getPhongObjectForContract(phong) as (Phong & { toaNha?: unknown }) | null;
+    const toaNhaSource = phongObject?.toaNha;
+    if (!toaNhaSource) return null;
+
+    if (typeof toaNhaSource === 'object') {
+      const toaNhaObj = toaNhaSource as ToaNha & { id?: unknown };
+      const toaNhaId = toComparableId((toaNhaObj as { _id?: unknown })._id ?? toaNhaObj.id);
+      if (!toaNhaId) return toaNhaObj;
+      return toaNhaList.find(t => toComparableId(t._id) === toaNhaId) || toaNhaObj;
+    }
+
+    const toaNhaId = toComparableId(toaNhaSource);
+    return toaNhaList.find(t => toComparableId(t._id) === toaNhaId) || null;
+  };
+
+  const getBenAInfoForContract = (hopDong: HopDong) => {
+    const toaNhaObj = getToaNhaObjectForContract(hopDong.phong) as (ToaNha & Record<string, unknown>) | null;
+    const chuSoHuuRaw = toaNhaObj?.chuSoHuu;
+    const chuSoHuuObj = (chuSoHuuRaw && typeof chuSoHuuRaw === 'object')
+      ? (chuSoHuuRaw as Record<string, unknown>)
+      : null;
+
+    const diaChiToaNha = formatAddressObject(toaNhaObj?.diaChi);
+    const diaChiBenA = safeDisplay(
+      chuSoHuuObj?.diaChiThuongTru ??
+      chuSoHuuObj?.diaChi ??
+      chuSoHuuObj?.queQuan ??
+      diaChiToaNha
+    );
+
+    return {
+      hoTen: safeDisplay(chuSoHuuObj?.hoTen ?? chuSoHuuObj?.ten ?? chuSoHuuObj?.name),
+      ngaySinh: formatDateValue(chuSoHuuObj?.ngaySinh),
+      diaChiThuongTru: diaChiBenA,
+      soGiayTo: safeDisplay(chuSoHuuObj?.cccd ?? chuSoHuuObj?.soCCCD ?? chuSoHuuObj?.cmnd),
+      ngayCap: formatDateValue(chuSoHuuObj?.ngayCap ?? chuSoHuuObj?.cccdNgayCap),
+      noiCap: safeDisplay(chuSoHuuObj?.noiCap ?? chuSoHuuObj?.cccdNoiCap),
+      soDienThoai: safeDisplay(chuSoHuuObj?.soDienThoai ?? chuSoHuuObj?.phone ?? chuSoHuuObj?.soDienThoaiLienHe),
+    };
+  };
+
   const isExpiringSoon = (ngayKetThuc: Date | string) => {
     const today = new Date();
     const endDate = new Date(ngayKetThuc);
@@ -263,6 +368,22 @@ export default function HopDongPage() {
         const daiDienId = typeof hopDong.nguoiDaiDien === 'object' ? (hopDong.nguoiDaiDien as { _id: string })._id : hopDong.nguoiDaiDien;
         return ktId === daiDienId;
       });
+      const nguoiDaiDienInfo = (nguoiDaiDienObj || {}) as Record<string, unknown>;
+      const benAInfo = getBenAInfoForContract(hopDong);
+      const phongObj = getPhongObjectForContract(hopDong.phong) as (Phong & { tienNghi?: unknown }) | null;
+      const tienNghiBanGiao = Array.isArray(phongObj?.tienNghi)
+        ? Array.from(
+            new Set(
+              phongObj.tienNghi
+                .map(item => {
+                  const key = typeof item === 'string' ? item.trim() : '';
+                  if (!key) return '';
+                  return tienNghiLabels[key] || key;
+                })
+                .filter(Boolean)
+            )
+          )
+        : [];
 
       const ngayBatDau = new Date(hopDong.ngayBatDau);
       const ngayKetThuc = new Date(hopDong.ngayKetThuc);
@@ -365,7 +486,7 @@ export default function HopDongPage() {
             new Paragraph({
               children: [
                 new TextRun({
-                  text: "Ông/bà: [Tên chủ nhà] Sinh ngày: [Ngày sinh]",
+                  text: `Ông/bà: ${benAInfo.hoTen} Sinh ngày: ${benAInfo.ngaySinh}`,
                   size: 20,
                 }),
               ],
@@ -374,7 +495,7 @@ export default function HopDongPage() {
             new Paragraph({
               children: [
                 new TextRun({
-                  text: "Nơi đăng ký hộ khẩu thường trú: [Địa chỉ thường trú]",
+                  text: `Nơi đăng ký hộ khẩu thường trú: ${benAInfo.diaChiThuongTru}`,
                   size: 20,
                 }),
               ],
@@ -383,7 +504,7 @@ export default function HopDongPage() {
             new Paragraph({
               children: [
                 new TextRun({
-                  text: "CMND (CCCD) số: [Số CMND] cấp ngày [Ngày cấp] tại: [Nơi cấp]",
+                  text: `CMND (CCCD) số: ${benAInfo.soGiayTo} cấp ngày ${benAInfo.ngayCap} tại: ${benAInfo.noiCap}`,
                   size: 20,
                 }),
               ],
@@ -392,7 +513,7 @@ export default function HopDongPage() {
             new Paragraph({
               children: [
                 new TextRun({
-                  text: "Số điện thoại liên hệ: [Số điện thoại]",
+                  text: `Số điện thoại liên hệ: ${benAInfo.soDienThoai}`,
                   size: 20,
                 }),
               ],
@@ -412,7 +533,7 @@ export default function HopDongPage() {
             new Paragraph({
               children: [
                 new TextRun({
-                  text: `Ông/bà: ${nguoiDaiDienObj?.hoTen || nguoiDaiDien} Sinh ngày: ${nguoiDaiDienObj?.ngaySinh ? new Date(nguoiDaiDienObj.ngaySinh).toLocaleDateString('vi-VN') : '[Ngày sinh]'}`,
+                  text: `Ông/bà: ${safeDisplay(nguoiDaiDienObj?.hoTen || nguoiDaiDien)} Sinh ngày: ${formatDateValue(nguoiDaiDienObj?.ngaySinh)}`,
                   size: 20,
                 }),
               ],
@@ -421,7 +542,7 @@ export default function HopDongPage() {
             new Paragraph({
               children: [
                 new TextRun({
-                  text: `Nơi đăng ký hộ khẩu thường trú: ${nguoiDaiDienObj?.queQuan || '[Quê quán]'}`,
+                  text: `Nơi đăng ký hộ khẩu thường trú: ${safeDisplay(nguoiDaiDienObj?.queQuan)}`,
                   size: 20,
                 }),
               ],
@@ -430,7 +551,7 @@ export default function HopDongPage() {
             new Paragraph({
               children: [
                 new TextRun({
-                  text: `Số CMND (CCCD): ${nguoiDaiDienObj?.cccd || '[Số CCCD]'} cấp ngày [Ngày cấp] tại: [Nơi cấp]`,
+                  text: `Số CMND (CCCD): ${safeDisplay(nguoiDaiDienObj?.cccd)} cấp ngày ${formatDateValue(nguoiDaiDienInfo.ngayCap ?? nguoiDaiDienInfo.cccdNgayCap)} tại: ${safeDisplay(nguoiDaiDienInfo.noiCap ?? nguoiDaiDienInfo.cccdNoiCap)}`,
                   size: 20,
                 }),
               ],
@@ -439,7 +560,7 @@ export default function HopDongPage() {
             new Paragraph({
               children: [
                 new TextRun({
-                  text: `Số điện thoại liên hệ: ${nguoiDaiDienObj?.soDienThoai || '[Số điện thoại]'}`,
+                  text: `Số điện thoại liên hệ: ${safeDisplay(nguoiDaiDienObj?.soDienThoai)}`,
                   size: 20,
                 }),
               ],
@@ -510,6 +631,17 @@ export default function HopDongPage() {
               ],
               spacing: { after: 200 },
             }),
+            ...(tienNghiBanGiao.length > 0 ? [
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Tài sản, tiện nghi bàn giao kèm theo phòng: ${tienNghiBanGiao.join(', ')}. Bên B xác nhận đã kiểm tra và tiếp nhận đầy đủ các tiện nghi nêu trên tại thời điểm ký hợp đồng.`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 200 },
+              }),
+            ] : []),
             new Paragraph({
               children: [
                 new TextRun({
@@ -581,7 +713,25 @@ export default function HopDongPage() {
             new Paragraph({
               children: [
                 new TextRun({
-                  text: "- Bảo quản các trang thiết bị và cơ sở vật chất của bên A trang bị cho ban đầu (làm hỏng phải sửa, mất phải đền).",
+                  text: "- Bên B có trách nhiệm giữ gìn, bảo quản các thiết bị, tài sản, tiện nghi được bàn giao kèm theo phòng trong suốt thời gian thuê.",
+                  size: 20,
+                }),
+              ],
+              spacing: { after: 100 },
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "- Nếu thiết bị, tài sản hoặc tiện nghi bị hư hỏng, mất mát do lỗi của Bên B thì Bên B phải chịu toàn bộ chi phí sửa chữa, thay thế hoặc bồi thường theo giá trị thực tế tại thời điểm phát sinh.",
+                  size: 20,
+                }),
+              ],
+              spacing: { after: 100 },
+            }),
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: "- Trường hợp hư hỏng do hao mòn tự nhiên hoặc lỗi kỹ thuật khách quan thì hai bên cùng kiểm tra, thống nhất phương án xử lý và chi phí thực hiện.",
                   size: 20,
                 }),
               ],

@@ -687,8 +687,8 @@ export default function XemPhongPage() {
 
         {/* Room Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {filteredPhong.map((phong) => (
-            <Card key={phong._id} className="group overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer bg-white/90 backdrop-blur-sm hover:scale-[1.02] hover:bg-white/95">
+          {filteredPhong.map((phong, index) => (
+            <Card key={`${phong._id ?? (phong as any).id ?? 'phong'}-${index}`} className="group overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer bg-white/90 backdrop-blur-sm hover:scale-[1.02] hover:bg-white/95">
               <div className="aspect-video bg-gradient-to-br from-slate-100 to-slate-200 relative overflow-hidden">
                 {phong.anhPhong && phong.anhPhong.length > 0 ? (
                   <>

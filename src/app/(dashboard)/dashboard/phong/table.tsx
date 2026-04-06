@@ -160,6 +160,9 @@ type PhongTableProps = {
   onViewTenants?: (phong: Phong) => void
 }
 
+const getPhongDndId = (phong: Phong, index: number) =>
+  `${phong._id ?? (phong as any).id ?? 'phong'}-${index}`
+
 const getToaNhaName = (toaNha: string | { tenToaNha?: string }, toaNhaList: ToaNha[]) => {
   if (typeof toaNha === 'object' && toaNha?.tenToaNha) {
     return toaNha.tenToaNha
@@ -172,7 +175,7 @@ const createColumns = (props: PhongTableProps): ColumnDef<Phong>[] => [
   {
     id: "drag",
     header: () => null,
-    cell: ({ row }) => <DragHandle id={row.original._id!} />,
+    cell: ({ row }) => <DragHandle id={row.id} />,
     enableHiding: false,
   },
   {
@@ -385,7 +388,7 @@ const createColumns = (props: PhongTableProps): ColumnDef<Phong>[] => [
 
 function DraggableRow({ row }: { row: Row<Phong> }) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
-    id: row.original._id!,
+    id: row.id,
   })
 
   return (
@@ -449,7 +452,7 @@ export function PhongDataTable(props: PhongDataTableProps) {
   )
 
   const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => data?.map(({ _id }) => _id!) || [],
+    () => data?.map((phong, index) => getPhongDndId(phong, index)) || [],
     [data]
   )
 
@@ -463,7 +466,7 @@ export function PhongDataTable(props: PhongDataTableProps) {
       columnFilters,
       pagination,
     },
-    getRowId: (row) => row._id!,
+    getRowId: (row, index) => getPhongDndId(row, index),
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -605,8 +608,8 @@ export function PhongDataTable(props: PhongDataTableProps) {
                   items={dataIds}
                   strategy={verticalListSortingStrategy}
                 >
-                  {table.getRowModel().rows.map((row) => (
-                    <DraggableRow key={row.id} row={row} />
+                  {table.getRowModel().rows.map((row, index) => (
+                    <DraggableRow key={`${row.id}-${index}`} row={row} />
                   ))}
                 </SortableContext>
               ) : (

@@ -50,7 +50,7 @@ import {
   FileText,
   Copy
 } from 'lucide-react';
-import { ThanhToan, HoaDon } from '@/types';
+import { ThanhToan, HoaDon, ThanhToanCreateRequest } from '@/types';
 import { toast } from 'sonner';
 import { ThanhToanDataTable } from './table';
 import { thanhToanService } from '@/services/thanhToanService';
@@ -583,17 +583,42 @@ function ThanhToanForm({
     e.preventDefault();
 
     try {
-      const requestData = {
-        hoaDon: formData.hoaDon, // Sử dụng hoaDon thay vì hoaDonId để khớp với interface nếu có thể, hoặc giữ nguyên và cast sang any
-        soTien: formData.soTien,
-        phuongThuc: formData.phuongThuc,
-        thongTinChuyenKhoan: formData.phuongThuc === 'chuyenKhoan' ? {
-          nganHang: formData.nganHang,
-          soGiaoDich: formData.soGiaoDich
-        } : undefined,
-        ngayThanhToan: new Date(formData.ngayThanhToan),
+      type PaymentMethod = ThanhToanCreateRequest['phuongThuc'];
+      const allowedMethods: PaymentMethod[] = ['tienMat', 'chuyenKhoan', 'viDienTu'];
+
+      const hoaDonId = Number(formData.hoaDon);
+      if (!Number.isFinite(hoaDonId)) {
+        throw new Error('Hóa đơn không hợp lệ');
+      }
+
+      const soTien = Number(formData.soTien);
+      if (!Number.isFinite(soTien) || soTien <= 0) {
+        throw new Error('Số tiền thanh toán không hợp lệ');
+      }
+
+      if (!allowedMethods.includes(formData.phuongThuc as PaymentMethod)) {
+        throw new Error('Phương thức thanh toán không hợp lệ');
+      }
+
+      const ngayThanhToan = formData.ngayThanhToan?.trim();
+      const isDateFormatValid = /^\d{4}-\d{2}-\d{2}$/.test(ngayThanhToan);
+      if (!ngayThanhToan || !isDateFormatValid || Number.isNaN(new Date(ngayThanhToan).getTime())) {
+        throw new Error('Ngày thanh toán không hợp lệ');
+      }
+
+      const requestData: ThanhToanCreateRequest = {
+        hoaDon_id: hoaDonId,
+        soTien,
+        phuongThuc: formData.phuongThuc as PaymentMethod,
+        ngayThanhToan,
         ghiChu: formData.ghiChu,
-        anhBienLai: formData.anhBienLai
+        anhBienLai: formData.anhBienLai,
+        ...(formData.phuongThuc === 'chuyenKhoan'
+          ? {
+              thongTinChuyenKhoan_nganHang: formData.nganHang.trim() || null,
+              thongTinChuyenKhoan_soGiaoDich: formData.soGiaoDich.trim() || null,
+            }
+          : {}),
       };
 
       console.log('Submitting:', requestData);
@@ -601,7 +626,7 @@ function ThanhToanForm({
       if (thanhToan) {
         throw new Error('Chỉnh sửa thanh toán không được hỗ trợ. Vui lòng xóa và tạo lại.');
       } else {
-        await thanhToanService.create({ ...requestData, hoaDonId: formData.hoaDon } as any);
+        await thanhToanService.create(requestData);
       }
       onSuccess();
     } catch (error: any) {
