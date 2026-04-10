@@ -1,70 +1,70 @@
 
-## 🚀 Tính năng chính
+## Tính năng chính
 
-### 📊 Dashboard
+### Dashboard
 - Thống kê tổng quan về phòng, doanh thu, hóa đơn
 - Biểu đồ doanh thu theo tháng
 - Danh sách hóa đơn sắp đến hạn
 - Danh sách sự cố cần xử lý
 - Hợp đồng sắp hết hạn
 
-### 🏢 Quản lý tòa nhà
+### Quản lý tòa nhà
 - CRUD thông tin tòa nhà
 - Upload ảnh tòa nhà
 - Quản lý tiện ích chung
 - Xem danh sách phòng theo tòa nhà
 
-### 🏠 Quản lý phòng
+### Quản lý phòng
 - CRUD thông tin phòng
 - Upload ảnh phòng
 - Lọc phòng theo trạng thái
 - Xem lịch sử thuê phòng
 - Quản lý tiện nghi phòng
 
-### 👥 Quản lý khách thuê
+### Quản lý khách thuê
 - CRUD thông tin khách thuê
 - Upload ảnh CCCD
 - Lịch sử thuê phòng
 - Lịch sử thanh toán
 
-### 📄 Quản lý hợp đồng
+### Quản lý hợp đồng
 - Tạo hợp đồng mới
 - Upload file hợp đồng PDF
 - Gia hạn hợp đồng
 - Chấm dứt hợp đồng
 - In hợp đồng
 
-### ⚡ Quản lý chỉ số điện nước
+### Quản lý chỉ số điện nước
 - Ghi chỉ số hàng tháng
 - Upload ảnh chỉ số
 - Tự động tính tiêu thụ
 - Lịch sử chỉ số
 
-### 🧾 Quản lý hóa đơn
+### Quản lý hóa đơn
 - Tạo hóa đơn tự động theo chu kỳ
 - Tính toán tự động: tiền điện, nước, dịch vụ
 - Gửi thông báo hóa đơn
 - In hóa đơn
 - Xuất báo cáo Excel
 
-### 💰 Quản lý thanh toán
+### Quản lý thanh toán
 - Ghi nhận thanh toán
 - Upload biên lai
 - Lịch sử thanh toán
 - Xuất phiếu thu
 
-### 🚨 Quản lý sự cố
+### Quản lý sự cố
 - Khách thuê báo cáo sự cố
 - Phân loại và ưu tiên sự cố
 - Theo dõi tiến độ xử lý
 - Upload ảnh sự cố
 
-### 🔔 Thông báo
+### Thông báo
 - Gửi thông báo đến khách thuê
 - Thông báo theo phòng/tòa nhà
 - Lịch sử thông báo
 
-### ⚙️ Cài đặt hệ thống
+### Cài đặt hệ thống
 - Quản lý người dùng
 - Cấu hình hệ thống
 - Sao lưu và khôi phục dữ liệu
@@ -90,15 +90,15 @@ npm run dev
 
 Đợi vài giây cho đến khi thấy thông báo:
 ```
-✓ Ready in 3.2s
-○ Local:   http://localhost:3000
+ Ready in 3.2s
+ Local:   http://localhost:3000
 ```
 
 #### 5.2. Truy cập ứng dụng
 
 Mở trình duyệt và truy cập: **http://localhost:3000**
 
-## 📊 Database Schema
+## Database Schema
 
 Hệ thống sử dụng MongoDB với các collection chính:
 
@@ -113,7 +113,7 @@ Hệ thống sử dụng MongoDB với các collection chính:
 - **SuCo**: Báo cáo sự cố
 - **ThongBao**: Thông báo hệ thống
 
-## 🔐 Authentication
+## Authentication
 
 Hệ thống sử dụng NextAuth.js với:
 - JWT tokens
@@ -121,14 +121,14 @@ Hệ thống sử dụng NextAuth.js với:
 - Role-based access control (admin, chủ nhà, nhân viên)
 - Protected routes
 
-## 📱 Responsive Design
+## Responsive Design
 
 - Mobile-first approach
 - Sidebar collapse trên mobile
 - Bảng responsive với horizontal scroll
 - Form stack trên mobile
 
-## 📝 API Documentation
+## API Documentation
 
 ### Authentication
 - `POST /api/auth/register` - Đăng ký tài khoản
@@ -188,7 +188,7 @@ Hệ thống sử dụng NextAuth.js với:
 ### Dashboard
 - `GET /api/dashboard/stats` - Lấy thống kê dashboard
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - [Next.js](https://nextjs.org/)
 - [shadcn/ui](https://ui.shadcn.com/)
