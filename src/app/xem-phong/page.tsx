@@ -760,7 +760,7 @@ export default function XemPhongPage() {
 
                 <Button
                   size="sm"
-                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 group"
+                  className="w-full bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-black-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 group"
                   onClick={() => {
                     setSelectedPhong(phong);
                     setShowDetails(true);

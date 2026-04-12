@@ -1,20 +1,26 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Phone, Lock, LogIn, Home } from 'lucide-react';
-import { toast } from 'sonner';
-import { khachThueService } from '@/services/khachThueService';
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Phone, Lock, LogIn, Home } from "lucide-react";
+import { toast } from "sonner";
+import { khachThueService } from "@/services/khachThueService";
 
 export default function KhachThueDangNhapPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    soDienThoai: '',
-    matKhau: '',
+    soDienThoai: "",
+    matKhau: "",
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -28,17 +34,17 @@ export default function KhachThueDangNhapPage() {
 
       if (result) {
         // Lưu token vào localStorage
-        localStorage.setItem('khachThueToken', result.token);
-        localStorage.setItem('khachThueData', JSON.stringify(result.khachThue));
-        
-        toast.success('Đăng nhập thành công!');
-        router.push('/khach-thue/dashboard');
+        localStorage.setItem("khachThueToken", result.token);
+        localStorage.setItem("khachThueData", JSON.stringify(result.khachThue));
+
+        toast.success("Đăng nhập thành công!");
+        router.push("/khach-thue/dashboard");
       } else {
-        toast.error('Đăng nhập thất bại, không có dữ liệu trả về');
+        toast.error("Đăng nhập thất bại, không có dữ liệu trả về");
       }
     } catch (error: any) {
-      console.error('Error logging in:', error);
-      toast.error(error.message || 'Có lỗi xảy ra khi đăng nhập');
+      console.error("Error logging in:", error);
+      toast.error(error.message || "Có lỗi xảy ra khi đăng nhập");
     } finally {
       setIsLoading(false);
     }
@@ -51,7 +57,9 @@ export default function KhachThueDangNhapPage() {
           <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center">
             <Home className="h-8 w-8 text-white" />
           </div>
-          <CardTitle className="text-2xl font-bold">Đăng nhập Khách thuê</CardTitle>
+          <CardTitle className="text-2xl font-bold">
+            Đăng nhập Khách thuê
+          </CardTitle>
           <CardDescription>
             Nhập số điện thoại và mật khẩu để xem thông tin phòng trọ của bạn
           </CardDescription>
@@ -65,9 +73,14 @@ export default function KhachThueDangNhapPage() {
                 <Input
                   id="soDienThoai"
                   type="tel"
-                  placeholder="0123456789"
+                  placeholder="Nhập số điện thoại"
                   value={formData.soDienThoai}
-                  onChange={(e) => setFormData(prev => ({ ...prev, soDienThoai: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      soDienThoai: e.target.value,
+                    }))
+                  }
                   className="pl-10"
                   required
                 />
@@ -83,7 +96,12 @@ export default function KhachThueDangNhapPage() {
                   type="password"
                   placeholder="Nhập mật khẩu"
                   value={formData.matKhau}
-                  onChange={(e) => setFormData(prev => ({ ...prev, matKhau: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      matKhau: e.target.value,
+                    }))
+                  }
                   className="pl-10"
                   required
                 />
@@ -106,7 +124,9 @@ export default function KhachThueDangNhapPage() {
 
             <div className="text-center text-sm text-gray-600 mt-4">
               <p>Chưa có mật khẩu?</p>
-              <p className="text-xs mt-1">Vui lòng liên hệ quản lý để được tạo tài khoản</p>
+              <p className="text-xs mt-1">
+                Vui lòng liên hệ quản lý để được tạo tài khoản
+              </p>
             </div>
           </form>
         </CardContent>
@@ -114,4 +134,3 @@ export default function KhachThueDangNhapPage() {
     </div>
   );
 }
-

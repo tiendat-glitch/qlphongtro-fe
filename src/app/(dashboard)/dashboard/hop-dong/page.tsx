@@ -1,12 +1,18 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { useCache } from '@/hooks/use-cache';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { useCache } from "@/hooks/use-cache";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -15,16 +21,16 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Plus,
   FileText,
@@ -37,40 +43,59 @@ import {
   Trash2,
   Users,
   Building2,
-  Home
-} from 'lucide-react';
-import { HopDong, Phong, KhachThue, ToaNha } from '@/types';
-import { HopDongDataTable } from './table';
-import { toast } from 'sonner';
-import { Document, Packer, Paragraph, TextRun, HeadingLevel, AlignmentType } from 'docx';
-import { saveAs } from 'file-saver';
-import { hopDongService } from '@/services/hopDongService';
-import { phongService } from '@/services/phongService';
-import { khachThueService } from '@/services/khachThueService';
-import { toaNhaService } from '@/services/toaNhaService';
-import { CACHE_KEYS } from '@/lib/cache-keys';
-import { invalidateEntityCaches } from '@/lib/cache-invalidation';
+  Home,
+} from "lucide-react";
+import { HopDong, Phong, KhachThue, ToaNha } from "@/types";
+import { HopDongDataTable } from "./table";
+import { toast } from "sonner";
+import {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+  HeadingLevel,
+  AlignmentType,
+} from "docx";
+import { saveAs } from "file-saver";
+import { hopDongService } from "@/services/hopDongService";
+import { phongService } from "@/services/phongService";
+import { khachThueService } from "@/services/khachThueService";
+import { toaNhaService } from "@/services/toaNhaService";
+import { CACHE_KEYS } from "@/lib/cache-keys";
+import { invalidateEntityCaches } from "@/lib/cache-invalidation";
 
 export default function HopDongPage() {
   const router = useRouter();
-  const hopDongCache = useCache<HopDong[]>({ key: CACHE_KEYS.hopDongList, duration: 300000 });
-  const phongCache = useCache<Phong[]>({ key: CACHE_KEYS.phongList, duration: 300000 });
-  const khachThueCache = useCache<KhachThue[]>({ key: CACHE_KEYS.khachThueList, duration: 300000 });
-  const toaNhaCache = useCache<ToaNha[]>({ key: CACHE_KEYS.toaNhaList, duration: 300000 });
+  const hopDongCache = useCache<HopDong[]>({
+    key: CACHE_KEYS.hopDongList,
+    duration: 300000,
+  });
+  const phongCache = useCache<Phong[]>({
+    key: CACHE_KEYS.phongList,
+    duration: 300000,
+  });
+  const khachThueCache = useCache<KhachThue[]>({
+    key: CACHE_KEYS.khachThueList,
+    duration: 300000,
+  });
+  const toaNhaCache = useCache<ToaNha[]>({
+    key: CACHE_KEYS.toaNhaList,
+    duration: 300000,
+  });
 
   const [hopDongList, setHopDongList] = useState<HopDong[]>([]);
   const [phongList, setPhongList] = useState<Phong[]>([]);
   const [khachThueList, setKhachThueList] = useState<KhachThue[]>([]);
   const [toaNhaList, setToaNhaList] = useState<ToaNha[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [toaNhaFilter, setToaNhaFilter] = useState<string>('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [toaNhaFilter, setToaNhaFilter] = useState<string>("all");
   const [viewingHopDong, setViewingHopDong] = useState<HopDong | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = 'Quản lý Hợp đồng';
+    document.title = "Quản lý Hợp đồng";
   }, []);
 
   useEffect(() => {
@@ -105,7 +130,7 @@ export default function HopDongPage() {
         hopDongService.getAll(),
         phongService.getAll(),
         khachThueService.getAll(),
-        toaNhaService.getAll()
+        toaNhaService.getAll(),
       ]);
 
       setHopDongList(hopDongs);
@@ -117,9 +142,8 @@ export default function HopDongPage() {
       phongCache.setCache(phongs);
       khachThueCache.setCache(khachThues);
       toaNhaCache.setCache(toaNhas);
-
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
@@ -129,22 +153,28 @@ export default function HopDongPage() {
     hopDongCache.setIsRefreshing(true);
     await fetchData(true); // Force refresh
     hopDongCache.setIsRefreshing(false);
-    toast.success('Đã tải dữ liệu mới nhất');
+    toast.success("Đã tải dữ liệu mới nhất");
   };
 
-
-  const filteredHopDong = hopDongList.filter(hopDong => {
-    const matchesSearch = hopDong.maHopDong.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredHopDong = hopDongList.filter((hopDong) => {
+    const matchesSearch =
+      hopDong.maHopDong.toLowerCase().includes(searchTerm.toLowerCase()) ||
       hopDong.dieuKhoan.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || hopDong.trangThai === statusFilter;
+    const matchesStatus =
+      statusFilter === "all" || hopDong.trangThai === statusFilter;
 
     // Filter by toa nha
     let matchesToaNha = true;
-    if (toaNhaFilter !== 'all') {
-      if (typeof hopDong.phong === 'object' && (hopDong.phong as { toaNha: { _id: string } })?.toaNha) {
-        matchesToaNha = ((hopDong.phong as { toaNha: { _id: string } }).toaNha)._id === toaNhaFilter;
+    if (toaNhaFilter !== "all") {
+      if (
+        typeof hopDong.phong === "object" &&
+        (hopDong.phong as { toaNha: { _id: string } })?.toaNha
+      ) {
+        matchesToaNha =
+          (hopDong.phong as { toaNha: { _id: string } }).toaNha._id ===
+          toaNhaFilter;
       } else {
-        const phong = phongList.find(p => p._id === hopDong.phong);
+        const phong = phongList.find((p) => p._id === hopDong.phong);
         matchesToaNha = phong?.toaNha === toaNhaFilter;
       }
     }
@@ -154,11 +184,11 @@ export default function HopDongPage() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'hoatDong':
+      case "hoatDong":
         return <Badge variant="default">Hoạt động</Badge>;
-      case 'hetHan':
+      case "hetHan":
         return <Badge variant="destructive">Hết hạn</Badge>;
-      case 'daHuy':
+      case "daHuy":
         return <Badge variant="secondary">Đã hủy</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
@@ -166,161 +196,200 @@ export default function HopDongPage() {
   };
 
   const getPhongName = (phong: string | { maPhong: string }) => {
-    if (typeof phong === 'object' && phong?.maPhong) {
+    if (typeof phong === "object" && phong?.maPhong) {
       return phong.maPhong;
     }
-    const phongObj = phongList.find(p => p._id === phong);
-    return phongObj?.maPhong || 'Không xác định';
+    const phongObj = phongList.find((p) => p._id === phong);
+    return phongObj?.maPhong || "Không xác định";
   };
 
   const getToaNhaName = (toaNha: string | { tenToaNha: string }) => {
-    if (typeof toaNha === 'object' && toaNha?.tenToaNha) {
+    if (typeof toaNha === "object" && toaNha?.tenToaNha) {
       return toaNha.tenToaNha;
     }
-    const toaNhaObj = toaNhaList.find(t => t._id === toaNha);
-    return toaNhaObj?.tenToaNha || 'Không xác định';
+    const toaNhaObj = toaNhaList.find((t) => t._id === toaNha);
+    return toaNhaObj?.tenToaNha || "Không xác định";
   };
 
-  const getPhongInfo = (phong: string | { maPhong: string; toaNha?: { tenToaNha?: string } | string }) => {
-    if (typeof phong === 'object' && phong?.maPhong) {
+  const getPhongInfo = (
+    phong:
+      | string
+      | { maPhong: string; toaNha?: { tenToaNha?: string } | string },
+  ) => {
+    if (typeof phong === "object" && phong?.maPhong) {
       return {
         maPhong: phong.maPhong,
-        toaNha: typeof phong.toaNha === 'object'
-          ? (phong.toaNha?.tenToaNha || 'Kh??ng x??c ?????nh')
-          : getToaNhaName(phong.toaNha || '')
+        toaNha:
+          typeof phong.toaNha === "object"
+            ? phong.toaNha?.tenToaNha || "Không xác định"
+            : getToaNhaName(phong.toaNha || ""),
       };
     }
 
-    const phongObj = phongList.find(p => p._id === phong);
-    if (!phongObj) return { maPhong: 'Kh??ng x??c ?????nh', toaNha: 'Kh??ng x??c ?????nh' };
+    const phongObj = phongList.find((p) => p._id === phong);
+    if (!phongObj)
+      return { maPhong: "Không xác định", toaNha: "Không xác định" };
 
-    const toaNha = typeof phongObj.toaNha === 'object'
-      ? phongObj.toaNha?.tenToaNha
-      : toaNhaList.find(t => t._id === phongObj.toaNha)?.tenToaNha;
+    const toaNha =
+      typeof phongObj.toaNha === "object"
+        ? phongObj.toaNha?.tenToaNha
+        : toaNhaList.find((t) => t._id === phongObj.toaNha)?.tenToaNha;
 
     return {
       maPhong: phongObj.maPhong,
-      toaNha: toaNha || 'Kh??ng x??c ?????nh'
+      toaNha: toaNha || "Không xác định",
     };
   };
 
   const getKhachThueName = (khachThue: string | { hoTen: string }) => {
-    if (typeof khachThue === 'object' && khachThue?.hoTen) {
+    if (typeof khachThue === "object" && khachThue?.hoTen) {
       return khachThue.hoTen;
     }
-    const khachThueObj = khachThueList.find(k => k._id === khachThue);
-    return khachThueObj?.hoTen || 'Không xác định';
+    const khachThueObj = khachThueList.find((k) => k._id === khachThue);
+    return khachThueObj?.hoTen || "Không xác định";
   };
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
+    return new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
     }).format(amount);
   };
 
-  const safeDisplay = (value: unknown, fallback = 'Chưa cập nhật') => {
+  const safeDisplay = (value: unknown, fallback = "Chưa cập nhật") => {
     if (value === null || value === undefined) return fallback;
-    if (value instanceof Date) return value.toLocaleDateString('vi-VN');
+    if (value instanceof Date) return value.toLocaleDateString("vi-VN");
     const text = String(value).trim();
     return text ? text : fallback;
   };
 
-  const formatDateValue = (value: unknown, fallback = 'Chưa cập nhật') => {
+  const formatDateValue = (value: unknown, fallback = "Chưa cập nhật") => {
     if (!value) return fallback;
     const date = new Date(value as string | number | Date);
     if (Number.isNaN(date.getTime())) return safeDisplay(value, fallback);
-    return date.toLocaleDateString('vi-VN');
+    return date.toLocaleDateString("vi-VN");
   };
 
   const toComparableId = (value: unknown) => {
-    if (value === null || value === undefined) return '';
-    if (typeof value === 'object') {
+    if (value === null || value === undefined) return "";
+    if (typeof value === "object") {
       const obj = value as Record<string, unknown>;
       if (obj._id !== undefined && obj._id !== null) return String(obj._id);
       if (obj.id !== undefined && obj.id !== null) return String(obj.id);
-      return '';
+      return "";
     }
     return String(value);
   };
 
   const formatAddressObject = (address: unknown) => {
-    if (!address || typeof address !== 'object') return '';
+    if (!address || typeof address !== "object") return "";
     const info = address as Record<string, unknown>;
-    const parts = [info.soNha, info.duong, info.phuong, info.quan, info.thanhPho]
-      .map(item => (item === null || item === undefined ? '' : String(item).trim()))
+    const parts = [
+      info.soNha,
+      info.duong,
+      info.phuong,
+      info.quan,
+      info.thanhPho,
+    ]
+      .map((item) =>
+        item === null || item === undefined ? "" : String(item).trim(),
+      )
       .filter(Boolean);
-    return parts.join(', ');
+    return parts.join(", ");
   };
 
   const tienNghiLabels: Record<string, string> = {
-    dieuhoa: 'Điều hòa',
-    nonglanh: 'Nóng lạnh',
-    tulanh: 'Tủ lạnh',
-    giuong: 'Giường',
-    tuquanao: 'Tủ quần áo',
-    banlamviec: 'Bàn làm việc',
-    ghe: 'Ghế',
-    tivi: 'TV',
-    wifi: 'WiFi',
-    maygiat: 'Máy giặt',
-    bep: 'Bếp',
-    noi: 'Nồi',
-    chen: 'Chén',
-    bat: 'Bát',
+    dieuhoa: "Điều hòa",
+    nonglanh: "Nóng lạnh",
+    tulanh: "Tủ lạnh",
+    giuong: "Giường",
+    tuquanao: "Tủ quần áo",
+    banlamviec: "Bàn làm việc",
+    ghe: "Ghế",
+    tivi: "TV",
+    wifi: "WiFi",
+    maygiat: "Máy giặt",
+    bep: "Bếp",
+    noi: "Nồi",
+    chen: "Chén",
+    bat: "Bát",
   };
 
-  const getPhongObjectForContract = (phong: HopDong['phong']) => {
-    if (typeof phong === 'object' && phong) {
+  const getPhongObjectForContract = (phong: HopDong["phong"]) => {
+    if (typeof phong === "object" && phong) {
       const phongObject = phong as Phong;
-      const phongId = toComparableId((phong as { _id?: unknown; id?: unknown })._id ?? (phong as { id?: unknown }).id);
+      const phongId = toComparableId(
+        (phong as { _id?: unknown; id?: unknown })._id ??
+          (phong as { id?: unknown }).id,
+      );
       if (!phongId) return phongObject;
-      return phongList.find(p => toComparableId(p._id) === phongId) || phongObject;
+      return (
+        phongList.find((p) => toComparableId(p._id) === phongId) || phongObject
+      );
     }
 
     const phongId = toComparableId(phong);
-    return phongList.find(p => toComparableId(p._id) === phongId) || null;
+    return phongList.find((p) => toComparableId(p._id) === phongId) || null;
   };
 
-  const getToaNhaObjectForContract = (phong: HopDong['phong']) => {
-    const phongObject = getPhongObjectForContract(phong) as (Phong & { toaNha?: unknown }) | null;
+  const getToaNhaObjectForContract = (phong: HopDong["phong"]) => {
+    const phongObject = getPhongObjectForContract(phong) as
+      | (Phong & { toaNha?: unknown })
+      | null;
     const toaNhaSource = phongObject?.toaNha;
     if (!toaNhaSource) return null;
 
-    if (typeof toaNhaSource === 'object') {
+    if (typeof toaNhaSource === "object") {
       const toaNhaObj = toaNhaSource as ToaNha & { id?: unknown };
-      const toaNhaId = toComparableId((toaNhaObj as { _id?: unknown })._id ?? toaNhaObj.id);
+      const toaNhaId = toComparableId(
+        (toaNhaObj as { _id?: unknown })._id ?? toaNhaObj.id,
+      );
       if (!toaNhaId) return toaNhaObj;
-      return toaNhaList.find(t => toComparableId(t._id) === toaNhaId) || toaNhaObj;
+      return (
+        toaNhaList.find((t) => toComparableId(t._id) === toaNhaId) || toaNhaObj
+      );
     }
 
     const toaNhaId = toComparableId(toaNhaSource);
-    return toaNhaList.find(t => toComparableId(t._id) === toaNhaId) || null;
+    return toaNhaList.find((t) => toComparableId(t._id) === toaNhaId) || null;
   };
 
   const getBenAInfoForContract = (hopDong: HopDong) => {
-    const toaNhaObj = getToaNhaObjectForContract(hopDong.phong) as (ToaNha & Record<string, unknown>) | null;
+    const toaNhaObj = getToaNhaObjectForContract(hopDong.phong) as
+      | (ToaNha & Record<string, unknown>)
+      | null;
     const chuSoHuuRaw = toaNhaObj?.chuSoHuu;
-    const chuSoHuuObj = (chuSoHuuRaw && typeof chuSoHuuRaw === 'object')
-      ? (chuSoHuuRaw as Record<string, unknown>)
-      : null;
+    const chuSoHuuObj =
+      chuSoHuuRaw && typeof chuSoHuuRaw === "object"
+        ? (chuSoHuuRaw as Record<string, unknown>)
+        : null;
 
     const diaChiToaNha = formatAddressObject(toaNhaObj?.diaChi);
     const diaChiBenA = safeDisplay(
       chuSoHuuObj?.diaChiThuongTru ??
-      chuSoHuuObj?.diaChi ??
-      chuSoHuuObj?.queQuan ??
-      diaChiToaNha
+        chuSoHuuObj?.diaChi ??
+        chuSoHuuObj?.queQuan ??
+        diaChiToaNha,
     );
 
     return {
-      hoTen: safeDisplay(chuSoHuuObj?.hoTen ?? chuSoHuuObj?.ten ?? chuSoHuuObj?.name),
+      hoTen: safeDisplay(
+        chuSoHuuObj?.hoTen ?? chuSoHuuObj?.ten ?? chuSoHuuObj?.name,
+      ),
       ngaySinh: formatDateValue(chuSoHuuObj?.ngaySinh),
       diaChiThuongTru: diaChiBenA,
-      soGiayTo: safeDisplay(chuSoHuuObj?.cccd ?? chuSoHuuObj?.soCCCD ?? chuSoHuuObj?.cmnd),
-      ngayCap: formatDateValue(chuSoHuuObj?.ngayCap ?? chuSoHuuObj?.cccdNgayCap),
+      soGiayTo: safeDisplay(
+        chuSoHuuObj?.cccd ?? chuSoHuuObj?.soCCCD ?? chuSoHuuObj?.cmnd,
+      ),
+      ngayCap: formatDateValue(
+        chuSoHuuObj?.ngayCap ?? chuSoHuuObj?.cccdNgayCap,
+      ),
       noiCap: safeDisplay(chuSoHuuObj?.noiCap ?? chuSoHuuObj?.cccdNoiCap),
-      soDienThoai: safeDisplay(chuSoHuuObj?.soDienThoai ?? chuSoHuuObj?.phone ?? chuSoHuuObj?.soDienThoaiLienHe),
+      soDienThoai: safeDisplay(
+        chuSoHuuObj?.soDienThoai ??
+          chuSoHuuObj?.phone ??
+          chuSoHuuObj?.soDienThoaiLienHe,
+      ),
     };
   };
 
@@ -351,8 +420,8 @@ export default function HopDongPage() {
       const latestHopDong = await hopDongService.getById(hopDong._id);
       setViewingHopDong(latestHopDong);
     } catch (error) {
-      console.error('Error fetching hop dong detail:', error);
-      toast.error('Không thể tải chi tiết hợp đồng');
+      console.error("Error fetching hop dong detail:", error);
+      toast.error("Không thể tải chi tiết hợp đồng");
     }
   };
 
@@ -360,15 +429,15 @@ export default function HopDongPage() {
     try {
       await hopDongService.delete(id);
 
-      invalidateEntityCaches('hop-dong');
+      invalidateEntityCaches("hop-dong");
       await fetchData(true);
       if (viewingHopDong?._id === id) {
         setViewingHopDong(null);
       }
-      toast.success('Đã xóa hợp đồng thành công');
+      toast.success("Đã xóa hợp đồng thành công");
     } catch (error) {
-      console.error('Error deleting hop dong:', error);
-      toast.error('Có lỗi xảy ra khi xóa hợp đồng');
+      console.error("Error deleting hop dong:", error);
+      toast.error("Có lỗi xảy ra khi xóa hợp đồng");
     }
   };
 
@@ -387,25 +456,34 @@ export default function HopDongPage() {
       const nguoiDaiDien = getKhachThueName(hopDong.nguoiDaiDien);
 
       // Lấy thông tin chi tiết của người đại diện
-      const nguoiDaiDienObj = khachThueList.find(kt => {
-        const ktId = typeof kt._id === 'object' ? (kt._id as { _id: string })._id : kt._id;
-        const daiDienId = typeof hopDong.nguoiDaiDien === 'object' ? (hopDong.nguoiDaiDien as { _id: string })._id : hopDong.nguoiDaiDien;
+      const nguoiDaiDienObj = khachThueList.find((kt) => {
+        const ktId =
+          typeof kt._id === "object" ? (kt._id as { _id: string })._id : kt._id;
+        const daiDienId =
+          typeof hopDong.nguoiDaiDien === "object"
+            ? (hopDong.nguoiDaiDien as { _id: string })._id
+            : hopDong.nguoiDaiDien;
         return ktId === daiDienId;
       });
-      const nguoiDaiDienInfo = (nguoiDaiDienObj || {}) as Record<string, unknown>;
+      const nguoiDaiDienInfo = (nguoiDaiDienObj || {}) as Record<
+        string,
+        unknown
+      >;
       const benAInfo = getBenAInfoForContract(hopDong);
-      const phongObj = getPhongObjectForContract(hopDong.phong) as (Phong & { tienNghi?: unknown }) | null;
+      const phongObj = getPhongObjectForContract(hopDong.phong) as
+        | (Phong & { tienNghi?: unknown })
+        | null;
       const tienNghiBanGiao = Array.isArray(phongObj?.tienNghi)
         ? Array.from(
             new Set(
               phongObj.tienNghi
-                .map(item => {
-                  const key = typeof item === 'string' ? item.trim() : '';
-                  if (!key) return '';
+                .map((item) => {
+                  const key = typeof item === "string" ? item.trim() : "";
+                  if (!key) return "";
                   return tienNghiLabels[key] || key;
                 })
-                .filter(Boolean)
-            )
+                .filter(Boolean),
+            ),
           )
         : [];
 
@@ -415,571 +493,580 @@ export default function HopDongPage() {
 
       // Tạo document Word
       const doc = new Document({
-        sections: [{
-          properties: {},
-          children: [
-            // Header
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM",
-                  bold: true,
-                  size: 24,
-                }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "Độc lập - Tự do - Hạnh phúc",
-                  bold: true,
-                  size: 20,
-                }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 400 },
-            }),
-
-            // Title
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "HỢP ĐỒNG THUÊ PHÒNG TRỌ",
-                  bold: true,
-                  size: 28,
-                }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `(Số: ${hopDong.maHopDong}/HĐTN)`,
-                  bold: true,
-                  size: 20,
-                }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 400 },
-            }),
-
-            // Date and location
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Hôm nay, ngày ${ngayHienTai.getDate()} tháng ${ngayHienTai.getMonth() + 1} năm ${ngayHienTai.getFullYear()};`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Tại địa chỉ: ${phongInfo.toaNha}`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 400 },
-            }),
-
-            // Parties
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "Chúng tôi gồm:",
-                  bold: true,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "1. Đại diện bên cho thuê phòng trọ (Bên A):",
-                  bold: true,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Ông/bà: ${benAInfo.hoTen} Sinh ngày: ${benAInfo.ngaySinh}`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Nơi đăng ký hộ khẩu thường trú: ${benAInfo.diaChiThuongTru}`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `CMND (CCCD) số: ${benAInfo.soGiayTo} cấp ngày ${benAInfo.ngayCap} tại: ${benAInfo.noiCap}`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Số điện thoại liên hệ: ${benAInfo.soDienThoai}`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "2. Bên thuê phòng trọ (Bên B):",
-                  bold: true,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Ông/bà: ${safeDisplay(nguoiDaiDienObj?.hoTen || nguoiDaiDien)} Sinh ngày: ${formatDateValue(nguoiDaiDienObj?.ngaySinh)}`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Nơi đăng ký hộ khẩu thường trú: ${safeDisplay(nguoiDaiDienObj?.queQuan)}`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Số CMND (CCCD): ${safeDisplay(nguoiDaiDienObj?.cccd)} cấp ngày ${formatDateValue(nguoiDaiDienInfo.ngayCap ?? nguoiDaiDienInfo.cccdNgayCap)} tại: ${safeDisplay(nguoiDaiDienInfo.noiCap ?? nguoiDaiDienInfo.cccdNoiCap)}`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Số điện thoại liên hệ: ${safeDisplay(nguoiDaiDienObj?.soDienThoai)}`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 400 },
-            }),
-
-            // Agreement
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "Sau khi bàn bạc kỹ lưỡng, hai bên cùng thống nhất như sau:",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Bên A đồng ý cho bên B thuê 01 phòng ở tại địa chỉ: ${phongInfo.maPhong} - ${phongInfo.toaNha}`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Giá thuê: ${formatCurrency(hopDong.giaThue)}/tháng`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Hình thức thanh toán: Hàng ${hopDong.chuKyThanhToan === 'thang' ? 'tháng' : hopDong.chuKyThanhToan === 'quy' ? 'quý' : 'năm'} - ngày ${hopDong.ngayThanhToan}`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Tiền điện: ${formatCurrency(hopDong.giaDien)}/kWh tính theo chỉ số công tơ, thanh toán vào cuối các tháng.`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Tiền nước: ${formatCurrency(hopDong.giaNuoc)}/m³ thanh toán vào cuối các tháng.`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Tiền đặt cọc: ${formatCurrency(hopDong.tienCoc)}`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            ...(tienNghiBanGiao.length > 0 ? [
+        sections: [
+          {
+            properties: {},
+            children: [
+              // Header
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: `Tài sản, tiện nghi bàn giao kèm theo phòng: ${tienNghiBanGiao.join(', ')}. Bên B xác nhận đã kiểm tra và tiếp nhận đầy đủ các tiện nghi nêu trên tại thời điểm ký hợp đồng.`,
+                    text: "CỘNG HÒA XÃ HỘI CHỦ NGHĨA VIỆT NAM",
+                    bold: true,
+                    size: 24,
+                  }),
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 200 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Độc lập - Tự do - Hạnh phúc",
+                    bold: true,
+                    size: 20,
+                  }),
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 400 },
+              }),
+
+              // Title
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "HỢP ĐỒNG THUÊ PHÒNG TRỌ",
+                    bold: true,
+                    size: 28,
+                  }),
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 200 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `(Số: ${hopDong.maHopDong}/HĐTN)`,
+                    bold: true,
+                    size: 20,
+                  }),
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 400 },
+              }),
+
+              // Date and location
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Hôm nay, ngày ${ngayHienTai.getDate()} tháng ${ngayHienTai.getMonth() + 1} năm ${ngayHienTai.getFullYear()};`,
                     size: 20,
                   }),
                 ],
                 spacing: { after: 200 },
               }),
-            ] : []),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Hợp đồng có giá trị kể từ ngày ${ngayBatDau.getDate()} tháng ${ngayBatDau.getMonth() + 1} năm ${ngayBatDau.getFullYear()} đến ngày ${ngayKetThuc.getDate()} tháng ${ngayKetThuc.getMonth() + 1} năm ${ngayKetThuc.getFullYear()}.`,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 400 },
-            }),
-
-            // Responsibilities
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "TRÁCH NHIỆM CỦA CÁC BÊN",
-                  bold: true,
-                  size: 24,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "* Trách nhiệm của bên A:",
-                  bold: true,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "- Tạo mọi điều kiện thuận lợi để bên B thực hiện theo hợp đồng.",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "- Cung cấp nguồn điện, nước đầy đủ cho bên B sử dụng.",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "* Trách nhiệm của bên B:",
-                  bold: true,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "- Thanh toán đầy đủ tiền theo đúng thỏa thuận.",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "- Bên B có trách nhiệm giữ gìn, bảo quản các thiết bị, tài sản, tiện nghi được bàn giao kèm theo phòng trong suốt thời gian thuê.",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "- Nếu thiết bị, tài sản hoặc tiện nghi bị hư hỏng, mất mát do lỗi của Bên B thì Bên B phải chịu toàn bộ chi phí sửa chữa, thay thế hoặc bồi thường theo giá trị thực tế tại thời điểm phát sinh.",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "- Trường hợp hư hỏng do hao mòn tự nhiên hoặc lỗi kỹ thuật khách quan thì hai bên cùng kiểm tra, thống nhất phương án xử lý và chi phí thực hiện.",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "- Không được tự ý sửa chữa, cải tạo cơ sở vật chất khi chưa được sự đồng ý của bên A.",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "- Luôn có ý thức giữ gìn vệ sinh trong và ngoài khu vực phòng trọ.",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "- Bên B phải chấp hành mọi quy định của pháp luật Nhà nước và quy định của địa phương.",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "- Nếu bên B cho khách ở qua đêm thì phải báo trước và được sự đồng ý của bên A, đồng thời phải chịu trách nhiệm về các hành vi vi phạm pháp luật của khách trong thời gian ở lại (nếu có).",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 400 },
-            }),
-
-            // Common responsibilities
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "TRÁCH NHIỆM CHUNG",
-                  bold: true,
-                  size: 24,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "- Hai bên phải tạo điều kiện thuận lợi cho nhau để thực hiện hợp đồng.",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "- Nếu một trong hai bên vi phạm hợp đồng trong thời gian hợp đồng vẫn còn hiệu lực thì bên còn lại có quyền đơn phương chấm dứt hợp đồng thuê nhà trọ. Ngoài ra, nếu hành vi vi phạm đó gây tổn thất cho bên bị vi phạm thì bên vi phạm sẽ phải bồi thường mọi thiệt hại đã gây ra.",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "- Trong trường hợp muốn chấm dứt hợp đồng trước thời hạn, cần phải báo trước cho bên kia ít nhất 30 ngày và hai bên phải có sự thống nhất với nhau.",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "- Kết thúc hợp đồng, Bên A phải trả lại đầy đủ tiền đặt cọc cho bên B.",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "- Bên nào vi phạm các điều khoản chung thì phải chịu trách nhiệm trước pháp luật.",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "- Hợp đồng này được lập thành 02 bản và có giá trị pháp lý như nhau, mỗi bên giữ một bản.",
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 400 },
-            }),
-
-            // Additional services
-            ...(hopDong.phiDichVu.length > 0 ? [
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: "PHÍ DỊCH VỤ BỔ SUNG:",
+                    text: `Tại địa chỉ: ${phongInfo.toaNha}`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 400 },
+              }),
+
+              // Parties
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Chúng tôi gồm:",
+                    bold: true,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 200 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "1. Đại diện bên cho thuê phòng trọ (Bên A):",
+                    bold: true,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 200 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Ông/bà: ${benAInfo.hoTen} Sinh ngày: ${benAInfo.ngaySinh}`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Nơi đăng ký hộ khẩu thường trú: ${benAInfo.diaChiThuongTru}`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `CMND (CCCD) số: ${benAInfo.soGiayTo} cấp ngày ${benAInfo.ngayCap} tại: ${benAInfo.noiCap}`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Số điện thoại liên hệ: ${benAInfo.soDienThoai}`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 200 },
+              }),
+
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "2. Bên thuê phòng trọ (Bên B):",
+                    bold: true,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 200 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Ông/bà: ${safeDisplay(nguoiDaiDienObj?.hoTen || nguoiDaiDien)} Sinh ngày: ${formatDateValue(nguoiDaiDienObj?.ngaySinh)}`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Nơi đăng ký hộ khẩu thường trú: ${safeDisplay(nguoiDaiDienObj?.queQuan)}`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Số CMND (CCCD): ${safeDisplay(nguoiDaiDienObj?.cccd)} cấp ngày ${formatDateValue(nguoiDaiDienInfo.ngayCap ?? nguoiDaiDienInfo.cccdNgayCap)} tại: ${safeDisplay(nguoiDaiDienInfo.noiCap ?? nguoiDaiDienInfo.cccdNoiCap)}`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Số điện thoại liên hệ: ${safeDisplay(nguoiDaiDienObj?.soDienThoai)}`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 400 },
+              }),
+
+              // Agreement
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "Sau khi bàn bạc kỹ lưỡng, hai bên cùng thống nhất như sau:",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 200 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Bên A đồng ý cho bên B thuê 01 phòng ở tại địa chỉ: ${phongInfo.maPhong} - ${phongInfo.toaNha}`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Giá thuê: ${formatCurrency(hopDong.giaThue)}/tháng`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Hình thức thanh toán: Hàng ${hopDong.chuKyThanhToan === "thang" ? "tháng" : hopDong.chuKyThanhToan === "quy" ? "quý" : "năm"} - ngày ${hopDong.ngayThanhToan}`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Tiền điện: ${formatCurrency(hopDong.giaDien)}/kWh tính theo chỉ số công tơ, thanh toán vào cuối các tháng.`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Tiền nước: ${formatCurrency(hopDong.giaNuoc)}/m³ thanh toán vào cuối các tháng.`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Tiền đặt cọc: ${formatCurrency(hopDong.tienCoc)}`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 200 },
+              }),
+              ...(tienNghiBanGiao.length > 0
+                ? [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: `Tài sản, tiện nghi bàn giao kèm theo phòng: ${tienNghiBanGiao.join(", ")}. Bên B xác nhận đã kiểm tra và tiếp nhận đầy đủ các tiện nghi nêu trên tại thời điểm ký hợp đồng.`,
+                          size: 20,
+                        }),
+                      ],
+                      spacing: { after: 200 },
+                    }),
+                  ]
+                : []),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Hợp đồng có giá trị kể từ ngày ${ngayBatDau.getDate()} tháng ${ngayBatDau.getMonth() + 1} năm ${ngayBatDau.getFullYear()} đến ngày ${ngayKetThuc.getDate()} tháng ${ngayKetThuc.getMonth() + 1} năm ${ngayKetThuc.getFullYear()}.`,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 400 },
+              }),
+
+              // Responsibilities
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "TRÁCH NHIỆM CỦA CÁC BÊN",
                     bold: true,
                     size: 24,
                   }),
                 ],
                 spacing: { after: 200 },
               }),
-              ...hopDong.phiDichVu.map(phi =>
-                new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: `- ${phi.ten}: ${formatCurrency(phi.gia)}`,
-                      size: 20,
-                    }),
-                  ],
-                  spacing: { after: 100 },
-                })
-              ),
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: "",
+                    text: "* Trách nhiệm của bên A:",
+                    bold: true,
                     size: 20,
                   }),
                 ],
                 spacing: { after: 200 },
               }),
-            ] : []),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "- Tạo mọi điều kiện thuận lợi để bên B thực hiện theo hợp đồng.",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "- Cung cấp nguồn điện, nước đầy đủ cho bên B sử dụng.",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 200 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "* Trách nhiệm của bên B:",
+                    bold: true,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 200 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "- Thanh toán đầy đủ tiền theo đúng thỏa thuận.",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "- Bên B có trách nhiệm giữ gìn, bảo quản các thiết bị, tài sản, tiện nghi được bàn giao kèm theo phòng trong suốt thời gian thuê.",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "- Nếu thiết bị, tài sản hoặc tiện nghi bị hư hỏng, mất mát do lỗi của Bên B thì Bên B phải chịu toàn bộ chi phí sửa chữa, thay thế hoặc bồi thường theo giá trị thực tế tại thời điểm phát sinh.",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "- Trường hợp hư hỏng do hao mòn tự nhiên hoặc lỗi kỹ thuật khách quan thì hai bên cùng kiểm tra, thống nhất phương án xử lý và chi phí thực hiện.",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "- Không được tự ý sửa chữa, cải tạo cơ sở vật chất khi chưa được sự đồng ý của bên A.",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "- Luôn có ý thức giữ gìn vệ sinh trong và ngoài khu vực phòng trọ.",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "- Bên B phải chấp hành mọi quy định của pháp luật Nhà nước và quy định của địa phương.",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "- Nếu bên B cho khách ở qua đêm thì phải báo trước và được sự đồng ý của bên A, đồng thời phải chịu trách nhiệm về các hành vi vi phạm pháp luật của khách trong thời gian ở lại (nếu có).",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 400 },
+              }),
 
-            // Additional terms
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "ĐIỀU KHOẢN BỔ SUNG:",
-                  bold: true,
-                  size: 24,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: hopDong.dieuKhoan,
-                  size: 20,
-                }),
-              ],
-              spacing: { after: 400 },
-            }),
+              // Common responsibilities
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "TRÁCH NHIỆM CHUNG",
+                    bold: true,
+                    size: 24,
+                  }),
+                ],
+                spacing: { after: 200 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "- Hai bên phải tạo điều kiện thuận lợi cho nhau để thực hiện hợp đồng.",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "- Nếu một trong hai bên vi phạm hợp đồng trong thời gian hợp đồng vẫn còn hiệu lực thì bên còn lại có quyền đơn phương chấm dứt hợp đồng thuê nhà trọ. Ngoài ra, nếu hành vi vi phạm đó gây tổn thất cho bên bị vi phạm thì bên vi phạm sẽ phải bồi thường mọi thiệt hại đã gây ra.",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "- Trong trường hợp muốn chấm dứt hợp đồng trước thời hạn, cần phải báo trước cho bên kia ít nhất 30 ngày và hai bên phải có sự thống nhất với nhau.",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "- Kết thúc hợp đồng, Bên A phải trả lại đầy đủ tiền đặt cọc cho bên B.",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "- Bên nào vi phạm các điều khoản chung thì phải chịu trách nhiệm trước pháp luật.",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "- Hợp đồng này được lập thành 02 bản và có giá trị pháp lý như nhau, mỗi bên giữ một bản.",
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 400 },
+              }),
 
-            // Signatures
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "ĐẠI DIỆN BÊN A                ĐẠI DIỆN BÊN B",
-                  bold: true,
-                  size: 20,
-                }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 200 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: "(Ký và ghi họ tên)                (Ký và ghi họ tên)",
-                  size: 20,
-                }),
-              ],
-              alignment: AlignmentType.CENTER,
-              spacing: { after: 400 },
-            }),
+              // Additional services
+              ...(hopDong.phiDichVu.length > 0
+                ? [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "PHÍ DỊCH VỤ BỔ SUNG:",
+                          bold: true,
+                          size: 24,
+                        }),
+                      ],
+                      spacing: { after: 200 },
+                    }),
+                    ...hopDong.phiDichVu.map(
+                      (phi) =>
+                        new Paragraph({
+                          children: [
+                            new TextRun({
+                              text: `- ${phi.ten}: ${formatCurrency(phi.gia)}`,
+                              size: 20,
+                            }),
+                          ],
+                          spacing: { after: 100 },
+                        }),
+                    ),
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "",
+                          size: 20,
+                        }),
+                      ],
+                      spacing: { after: 200 },
+                    }),
+                  ]
+                : []),
 
-            // Footer info
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Ngày tạo: ${new Date(hopDong.ngayTao).toLocaleDateString('vi-VN')}`,
-                  size: 16,
-                }),
-              ],
-              spacing: { after: 100 },
-            }),
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: `Trạng thái: ${hopDong.trangThai === 'hoatDong' ? 'Hoạt động' : hopDong.trangThai === 'hetHan' ? 'Hết hạn' : 'Đã hủy'}`,
-                  size: 16,
-                }),
-              ],
-              spacing: { after: 200 },
-            }),
-          ],
-        }],
+              // Additional terms
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "ĐIỀU KHOẢN BỔ SUNG:",
+                    bold: true,
+                    size: 24,
+                  }),
+                ],
+                spacing: { after: 200 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: hopDong.dieuKhoan,
+                    size: 20,
+                  }),
+                ],
+                spacing: { after: 400 },
+              }),
+
+              // Signatures
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "ĐẠI DIỆN BÊN A                ĐẠI DIỆN BÊN B",
+                    bold: true,
+                    size: 20,
+                  }),
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 200 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "(Ký và ghi họ tên)                (Ký và ghi họ tên)",
+                    size: 20,
+                  }),
+                ],
+                alignment: AlignmentType.CENTER,
+                spacing: { after: 400 },
+              }),
+
+              // Footer info
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Ngày tạo: ${new Date(hopDong.ngayTao).toLocaleDateString("vi-VN")}`,
+                    size: 16,
+                  }),
+                ],
+                spacing: { after: 100 },
+              }),
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: `Trạng thái: ${hopDong.trangThai === "hoatDong" ? "Hoạt động" : hopDong.trangThai === "hetHan" ? "Hết hạn" : "Đã hủy"}`,
+                    size: 16,
+                  }),
+                ],
+                spacing: { after: 200 },
+              }),
+            ],
+          },
+        ],
       });
 
       // Generate and download Word document
       const buffer = await Packer.toBuffer(doc);
       const uint8Array = new Uint8Array(buffer);
-      const blob = new Blob([uint8Array], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+      const blob = new Blob([uint8Array], {
+        type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      });
       saveAs(blob, `hop-dong-${hopDong.maHopDong}.docx`);
 
-      toast.success('Đã tải xuống hợp đồng thành công!');
+      toast.success("Đã tải xuống hợp đồng thành công!");
     } catch (error) {
-      console.error('Error generating Word document:', error);
-      toast.error('Có lỗi xảy ra khi tạo file Word');
+      console.error("Error generating Word document:", error);
+      toast.error("Có lỗi xảy ra khi tạo file Word");
     }
   };
 
   const handleGiaHan = async (hopDong: HopDong) => {
-    const newEndDate = prompt('Nhập ngày kết thúc mới (YYYY-MM-DD):');
+    const newEndDate = prompt("Nhập ngày kết thúc mới (YYYY-MM-DD):");
     if (newEndDate) {
       setActionLoading(`giahan-${hopDong._id}`);
       try {
@@ -987,16 +1074,16 @@ export default function HopDongPage() {
           ngayKetThuc: new Date(newEndDate),
         });
 
-        invalidateEntityCaches('hop-dong');
+        invalidateEntityCaches("hop-dong");
         await fetchData(true);
         if (viewingHopDong?._id === hopDong._id) {
           const latestHopDong = await hopDongService.getById(hopDong._id!);
           setViewingHopDong(latestHopDong);
         }
-        toast.success('Đã gia hạn hợp đồng thành công');
+        toast.success("Đã gia hạn hợp đồng thành công");
       } catch (error) {
-        console.error('Error extending contract:', error);
-        toast.error('Có lỗi xảy ra khi gia hạn hợp đồng');
+        console.error("Error extending contract:", error);
+        toast.error("Có lỗi xảy ra khi gia hạn hợp đồng");
       } finally {
         setActionLoading(null);
       }
@@ -1004,23 +1091,23 @@ export default function HopDongPage() {
   };
 
   const handleHuy = async (hopDong: HopDong) => {
-    if (confirm('Bạn có chắc chắn muốn hủy hợp đồng này?')) {
+    if (confirm("Bạn có chắc chắn muốn hủy hợp đồng này?")) {
       setActionLoading(`huy-${hopDong._id}`);
       try {
         await hopDongService.update(hopDong._id!, {
-          trangThai: 'daHuy',
+          trangThai: "daHuy",
         });
 
-        invalidateEntityCaches('hop-dong');
+        invalidateEntityCaches("hop-dong");
         await fetchData(true);
         if (viewingHopDong?._id === hopDong._id) {
           const latestHopDong = await hopDongService.getById(hopDong._id!);
           setViewingHopDong(latestHopDong);
         }
-        toast.success('Đã hủy hợp đồng thành công');
+        toast.success("Đã hủy hợp đồng thành công");
       } catch (error) {
-        console.error('Error cancelling contract:', error);
-        toast.error('Có lỗi xảy ra khi hủy hợp đồng');
+        console.error("Error cancelling contract:", error);
+        toast.error("Có lỗi xảy ra khi hủy hợp đồng");
       } finally {
         setActionLoading(null);
       }
@@ -1044,8 +1131,12 @@ export default function HopDongPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
-          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">Quản lý hợp đồng</h1>
-          <p className="text-xs md:text-sm text-gray-600">Danh sách tất cả hợp đồng trong hệ thống</p>
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900">
+            Quản lý hợp đồng
+          </h1>
+          <p className="text-xs md:text-sm text-gray-600">
+            Danh sách tất cả hợp đồng trong hệ thống
+          </p>
         </div>
         <div className="flex gap-2">
           <Button
@@ -1055,10 +1146,18 @@ export default function HopDongPage() {
             disabled={hopDongCache.isRefreshing}
             className="flex-1 sm:flex-none"
           >
-            <RefreshCw className={`h-4 w-4 sm:mr-2 ${hopDongCache.isRefreshing ? 'animate-spin' : ''}`} />
-            <span className="hidden sm:inline">{hopDongCache.isRefreshing ? 'Đang tải...' : 'Tải mới'}</span>
+            <RefreshCw
+              className={`h-4 w-4 sm:mr-2 ${hopDongCache.isRefreshing ? "animate-spin" : ""}`}
+            />
+            <span className="hidden sm:inline">
+              {hopDongCache.isRefreshing ? "Đang tải..." : "Tải mới"}
+            </span>
           </Button>
-          <Button size="sm" onClick={() => router.push('/dashboard/hop-dong/them-moi')} className="flex-1 sm:flex-none">
+          <Button
+            size="sm"
+            onClick={() => router.push("/dashboard/hop-dong/them-moi")}
+            className="flex-1 sm:flex-none"
+          >
             <Plus className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">Thêm hợp đồng</span>
             <span className="sm:hidden">Thêm</span>
@@ -1080,7 +1179,9 @@ export default function HopDongPage() {
             {/* Fixed Header */}
             <div className="flex items-center justify-between p-4 md:p-6 border-b bg-white flex-shrink-0">
               <div>
-                <h2 className="text-lg md:text-2xl font-semibold">Chi tiết hợp đồng</h2>
+                <h2 className="text-lg md:text-2xl font-semibold">
+                  Chi tiết hợp đồng
+                </h2>
                 <p className="text-xs md:text-sm text-gray-600">
                   Thông tin chi tiết hợp đồng {viewingHopDong.maHopDong}
                 </p>
@@ -1100,38 +1201,67 @@ export default function HopDongPage() {
               <div className="space-y-4 md:space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   <div>
-                    <Label className="text-xs md:text-sm font-medium text-gray-500">Mã hợp đồng</Label>
-                    <p className="text-base md:text-lg font-semibold">{viewingHopDong.maHopDong}</p>
+                    <Label className="text-xs md:text-sm font-medium text-gray-500">
+                      Mã hợp đồng
+                    </Label>
+                    <p className="text-base md:text-lg font-semibold">
+                      {viewingHopDong.maHopDong}
+                    </p>
                   </div>
                   <div>
-                    <Label className="text-xs md:text-sm font-medium text-gray-500">Trạng thái</Label>
-                    <div className="mt-1">{getStatusBadge(viewingHopDong.trangThai)}</div>
+                    <Label className="text-xs md:text-sm font-medium text-gray-500">
+                      Trạng thái
+                    </Label>
+                    <div className="mt-1">
+                      {getStatusBadge(viewingHopDong.trangThai)}
+                    </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                   <div>
-                    <Label className="text-xs md:text-sm font-medium text-gray-500">Phòng</Label>
-                    <p className="text-base md:text-lg">{getPhongName(viewingHopDong.phong)}</p>
+                    <Label className="text-xs md:text-sm font-medium text-gray-500">
+                      Phòng
+                    </Label>
+                    <p className="text-base md:text-lg">
+                      {getPhongName(viewingHopDong.phong)}
+                    </p>
                   </div>
                   <div>
-                    <Label className="text-xs md:text-sm font-medium text-gray-500">Tòa nhà</Label>
-                    <p className="text-base md:text-lg">{getPhongInfo(viewingHopDong.phong).toaNha}</p>
+                    <Label className="text-xs md:text-sm font-medium text-gray-500">
+                      Tòa nhà
+                    </Label>
+                    <p className="text-base md:text-lg">
+                      {getPhongInfo(viewingHopDong.phong).toaNha}
+                    </p>
                   </div>
                 </div>
 
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">Khách thuê</Label>
+                  <Label className="text-sm font-medium text-gray-500">
+                    Khách thuê
+                  </Label>
                   <div className="mt-2 space-y-1">
                     {viewingHopDong.khachThueId.map((khachThue, index) => {
-                      const khachThueId = typeof khachThue === 'object' ? (khachThue as { _id: string })._id : khachThue;
-                      const nguoiDaiDienId = typeof viewingHopDong.nguoiDaiDien === 'object' ? (viewingHopDong.nguoiDaiDien as { _id: string })._id : viewingHopDong.nguoiDaiDien;
+                      const khachThueId =
+                        typeof khachThue === "object"
+                          ? (khachThue as { _id: string })._id
+                          : khachThue;
+                      const nguoiDaiDienId =
+                        typeof viewingHopDong.nguoiDaiDien === "object"
+                          ? (viewingHopDong.nguoiDaiDien as { _id: string })._id
+                          : viewingHopDong.nguoiDaiDien;
                       return (
-                        <div key={khachThueId} className="flex items-center gap-2">
+                        <div
+                          key={khachThueId}
+                          className="flex items-center gap-2"
+                        >
                           <span className="text-sm">
                             {index + 1}. {getKhachThueName(khachThue)}
                             {khachThueId === nguoiDaiDienId && (
-                              <Badge variant="outline" className="ml-2">Người đại diện</Badge>
+                              <Badge variant="outline" className="ml-2">
+                                Người đại diện
+                              </Badge>
                             )}
                           </span>
                         </div>
@@ -1142,60 +1272,108 @@ export default function HopDongPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm font-medium text-gray-500">Ngày bắt đầu</Label>
-                    <p className="text-lg">{new Date(viewingHopDong.ngayBatDau).toLocaleDateString('vi-VN')}</p>
+                    <Label className="text-sm font-medium text-gray-500">
+                      Ngày bắt đầu
+                    </Label>
+                    <p className="text-lg">
+                      {new Date(viewingHopDong.ngayBatDau).toLocaleDateString(
+                        "vi-VN",
+                      )}
+                    </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-gray-500">Ngày kết thúc</Label>
-                    <p className="text-lg">{new Date(viewingHopDong.ngayKetThuc).toLocaleDateString('vi-VN')}</p>
+                    <Label className="text-sm font-medium text-gray-500">
+                      Ngày kết thúc
+                    </Label>
+                    <p className="text-lg">
+                      {new Date(viewingHopDong.ngayKetThuc).toLocaleDateString(
+                        "vi-VN",
+                      )}
+                    </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-4">
                   <div>
-                    <Label className="text-sm font-medium text-gray-500">Giá thuê</Label>
-                    <p className="text-lg font-semibold">{formatCurrency(viewingHopDong.giaThue)}/tháng</p>
+                    <Label className="text-sm font-medium text-gray-500">
+                      Giá thuê
+                    </Label>
+                    <p className="text-lg font-semibold">
+                      {formatCurrency(viewingHopDong.giaThue)}/tháng
+                    </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-gray-500">Tiền cọc</Label>
-                    <p className="text-lg font-semibold">{formatCurrency(viewingHopDong.tienCoc)}</p>
+                    <Label className="text-sm font-medium text-gray-500">
+                      Tiền cọc
+                    </Label>
+                    <p className="text-lg font-semibold">
+                      {formatCurrency(viewingHopDong.tienCoc)}
+                    </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-gray-500">Ngày thanh toán</Label>
-                    <p className="text-lg">Hàng {viewingHopDong.chuKyThanhToan} - ngày {viewingHopDong.ngayThanhToan}</p>
+                    <Label className="text-sm font-medium text-gray-500">
+                      Ngày thanh toán
+                    </Label>
+                    <p className="text-lg">
+                      Hàng {viewingHopDong.chuKyThanhToan} - ngày{" "}
+                      {viewingHopDong.ngayThanhToan}
+                    </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm font-medium text-gray-500">Giá điện</Label>
-                    <p className="text-lg">{formatCurrency(viewingHopDong.giaDien)}/kWh</p>
+                    <Label className="text-sm font-medium text-gray-500">
+                      Giá điện
+                    </Label>
+                    <p className="text-lg">
+                      {formatCurrency(viewingHopDong.giaDien)}/kWh
+                    </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-gray-500">Giá nước</Label>
-                    <p className="text-lg">{formatCurrency(viewingHopDong.giaNuoc)}/m³</p>
+                    <Label className="text-sm font-medium text-gray-500">
+                      Giá nước
+                    </Label>
+                    <p className="text-lg">
+                      {formatCurrency(viewingHopDong.giaNuoc)}/m³
+                    </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm font-medium text-gray-500">Chỉ số điện ban đầu</Label>
-                    <p className="text-lg">{viewingHopDong.chiSoDienBanDau} kWh</p>
+                    <Label className="text-sm font-medium text-gray-500">
+                      Chỉ số điện ban đầu
+                    </Label>
+                    <p className="text-lg">
+                      {viewingHopDong.chiSoDienBanDau} kWh
+                    </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-gray-500">Chỉ số nước ban đầu</Label>
-                    <p className="text-lg">{viewingHopDong.chiSoNuocBanDau} m³</p>
+                    <Label className="text-sm font-medium text-gray-500">
+                      Chỉ số nước ban đầu
+                    </Label>
+                    <p className="text-lg">
+                      {viewingHopDong.chiSoNuocBanDau} m³
+                    </p>
                   </div>
                 </div>
 
                 {viewingHopDong.phiDichVu.length > 0 && (
                   <div>
-                    <Label className="text-sm font-medium text-gray-500">Phí dịch vụ</Label>
+                    <Label className="text-sm font-medium text-gray-500">
+                      Phí dịch vụ
+                    </Label>
                     <div className="mt-2 space-y-2">
                       {viewingHopDong.phiDichVu.map((phi, index) => (
-                        <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                        <div
+                          key={index}
+                          className="flex justify-between items-center p-2 bg-gray-50 rounded"
+                        >
                           <span>{phi.ten}</span>
-                          <span className="font-semibold">{formatCurrency(phi.gia)}</span>
+                          <span className="font-semibold">
+                            {formatCurrency(phi.gia)}
+                          </span>
                         </div>
                       ))}
                     </div>
@@ -1203,7 +1381,9 @@ export default function HopDongPage() {
                 )}
 
                 <div>
-                  <Label className="text-sm font-medium text-gray-500">Điều khoản</Label>
+                  <Label className="text-sm font-medium text-gray-500">
+                    Điều khoản
+                  </Label>
                   <p className="text-sm mt-2 p-3 bg-gray-50 rounded whitespace-pre-wrap">
                     {viewingHopDong.dieuKhoan}
                   </p>
@@ -1211,12 +1391,24 @@ export default function HopDongPage() {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label className="text-sm font-medium text-gray-500">Ngày tạo</Label>
-                    <p className="text-sm">{new Date(viewingHopDong.ngayTao).toLocaleDateString('vi-VN')}</p>
+                    <Label className="text-sm font-medium text-gray-500">
+                      Ngày tạo
+                    </Label>
+                    <p className="text-sm">
+                      {new Date(viewingHopDong.ngayTao).toLocaleDateString(
+                        "vi-VN",
+                      )}
+                    </p>
                   </div>
                   <div>
-                    <Label className="text-sm font-medium text-gray-500">Ngày cập nhật</Label>
-                    <p className="text-sm">{new Date(viewingHopDong.ngayCapNhat).toLocaleDateString('vi-VN')}</p>
+                    <Label className="text-sm font-medium text-gray-500">
+                      Ngày cập nhật
+                    </Label>
+                    <p className="text-sm">
+                      {new Date(viewingHopDong.ngayCapNhat).toLocaleDateString(
+                        "vi-VN",
+                      )}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1224,17 +1416,30 @@ export default function HopDongPage() {
 
             {/* Fixed Footer */}
             <div className="flex flex-col sm:flex-row gap-2 p-4 md:p-6 border-t bg-white flex-shrink-0">
-              <Button variant="outline" size="sm" onClick={() => setViewingHopDong(null)} className="flex-1 sm:flex-none">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setViewingHopDong(null)}
+                className="flex-1 sm:flex-none"
+              >
                 Đóng
               </Button>
-              <Button size="sm" onClick={() => handleDownload(viewingHopDong)} className="flex-1 sm:flex-none">
+              <Button
+                size="sm"
+                onClick={() => handleDownload(viewingHopDong)}
+                className="flex-1 sm:flex-none"
+              >
                 <Download className="h-3 w-3 md:h-4 md:w-4 mr-2" />
                 Tải xuống
               </Button>
-              <Button size="sm" onClick={() => {
-                setViewingHopDong(null);
-                handleEdit(viewingHopDong);
-              }} className="flex-1 sm:flex-none">
+              <Button
+                size="sm"
+                onClick={() => {
+                  setViewingHopDong(null);
+                  handleEdit(viewingHopDong);
+                }}
+                className="flex-1 sm:flex-none"
+              >
                 <Edit className="h-3 w-3 md:h-4 md:w-4 mr-2" />
                 Chỉnh sửa
               </Button>
@@ -1248,8 +1453,12 @@ export default function HopDongPage() {
         <Card className="p-2 md:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Tổng hợp đồng</p>
-              <p className="text-base md:text-2xl font-bold">{hopDongList.length}</p>
+              <p className="text-[10px] md:text-xs font-medium text-gray-600">
+                Tổng hợp đồng
+              </p>
+              <p className="text-base md:text-2xl font-bold">
+                {hopDongList.length}
+              </p>
             </div>
             <FileText className="h-3 w-3 md:h-4 md:w-4 text-gray-500" />
           </div>
@@ -1258,9 +1467,11 @@ export default function HopDongPage() {
         <Card className="p-2 md:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Hoạt động</p>
+              <p className="text-[10px] md:text-xs font-medium text-gray-600">
+                Hoạt động
+              </p>
               <p className="text-base md:text-2xl font-bold text-green-600">
-                {hopDongList.filter(h => h.trangThai === 'hoatDong').length}
+                {hopDongList.filter((h) => h.trangThai === "hoatDong").length}
               </p>
             </div>
             <FileText className="h-3 w-3 md:h-4 md:w-4 text-green-600" />
@@ -1270,9 +1481,14 @@ export default function HopDongPage() {
         <Card className="p-2 md:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Sắp hết hạn</p>
+              <p className="text-[10px] md:text-xs font-medium text-gray-600">
+                Sắp hết hạn
+              </p>
               <p className="text-base md:text-2xl font-bold text-orange-600">
-                {hopDongList.filter(h => isExpiringSoon(h.ngayKetThuc)).length}
+                {
+                  hopDongList.filter((h) => isExpiringSoon(h.ngayKetThuc))
+                    .length
+                }
               </p>
             </div>
             <Calendar className="h-3 w-3 md:h-4 md:w-4 text-orange-600" />
@@ -1282,9 +1498,11 @@ export default function HopDongPage() {
         <Card className="p-2 md:p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-[10px] md:text-xs font-medium text-gray-600">Đã hết hạn</p>
+              <p className="text-[10px] md:text-xs font-medium text-gray-600">
+                Đã hết hạn
+              </p>
               <p className="text-base md:text-2xl font-bold text-red-600">
-                {hopDongList.filter(h => isExpired(h.ngayKetThuc)).length}
+                {hopDongList.filter((h) => isExpired(h.ngayKetThuc)).length}
               </p>
             </div>
             <Calendar className="h-3 w-3 md:h-4 md:w-4 text-red-600" />
@@ -1328,7 +1546,9 @@ export default function HopDongPage() {
       <div className="md:hidden">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold">Danh sách hợp đồng</h2>
-          <span className="text-sm text-gray-500">{filteredHopDong.length} hợp đồng</span>
+          <span className="text-sm text-gray-500">
+            {filteredHopDong.length} hợp đồng
+          </span>
         </div>
 
         {/* Mobile Filters */}
@@ -1348,10 +1568,18 @@ export default function HopDongPage() {
                 <SelectValue placeholder="Trạng thái" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all" className="text-sm">Tất cả</SelectItem>
-                <SelectItem value="hoatDong" className="text-sm">Hoạt động</SelectItem>
-                <SelectItem value="hetHan" className="text-sm">Hết hạn</SelectItem>
-                <SelectItem value="daHuy" className="text-sm">Đã hủy</SelectItem>
+                <SelectItem value="all" className="text-sm">
+                  Tất cả
+                </SelectItem>
+                <SelectItem value="hoatDong" className="text-sm">
+                  Hoạt động
+                </SelectItem>
+                <SelectItem value="hetHan" className="text-sm">
+                  Hết hạn
+                </SelectItem>
+                <SelectItem value="daHuy" className="text-sm">
+                  Đã hủy
+                </SelectItem>
               </SelectContent>
             </Select>
             <Select value={toaNhaFilter} onValueChange={setToaNhaFilter}>
@@ -1359,9 +1587,15 @@ export default function HopDongPage() {
                 <SelectValue placeholder="Tòa nhà" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all" className="text-sm">Tất cả</SelectItem>
+                <SelectItem value="all" className="text-sm">
+                  Tất cả
+                </SelectItem>
                 {toaNhaList.map((toaNha) => (
-                  <SelectItem key={toaNha._id} value={toaNha._id!} className="text-sm">
+                  <SelectItem
+                    key={toaNha._id}
+                    value={toaNha._id!}
+                    className="text-sm"
+                  >
                     {toaNha.tenToaNha}
                   </SelectItem>
                 ))}
@@ -1384,27 +1618,50 @@ export default function HopDongPage() {
                   {/* Header with contract code and status */}
                   <div className="flex justify-between items-start">
                     <div>
-                      <h3 className="font-medium text-gray-900">{hopDong.maHopDong}</h3>
+                      <h3 className="font-medium text-gray-900">
+                        {hopDong.maHopDong}
+                      </h3>
                       <div className="flex items-center gap-2 mt-1">
                         <Home className="h-3 w-3 text-gray-400" />
-                        <span className="text-sm text-gray-600">{phongInfo.maPhong}</span>
+                        <span className="text-sm text-gray-600">
+                          {phongInfo.maPhong}
+                        </span>
                       </div>
                     </div>
                     <div className="flex flex-col gap-1 items-end">
                       {(() => {
                         switch (hopDong.trangThai) {
-                          case 'hoatDong':
-                            return <Badge variant="default" className="text-xs">Hoạt động</Badge>;
-                          case 'hetHan':
-                            return <Badge variant="destructive" className="text-xs">Hết hạn</Badge>;
-                          case 'daHuy':
-                            return <Badge variant="secondary" className="text-xs">Đã hủy</Badge>;
+                          case "hoatDong":
+                            return (
+                              <Badge variant="default" className="text-xs">
+                                Hoạt động
+                              </Badge>
+                            );
+                          case "hetHan":
+                            return (
+                              <Badge variant="destructive" className="text-xs">
+                                Hết hạn
+                              </Badge>
+                            );
+                          case "daHuy":
+                            return (
+                              <Badge variant="secondary" className="text-xs">
+                                Đã hủy
+                              </Badge>
+                            );
                           default:
-                            return <Badge variant="outline" className="text-xs">{hopDong.trangThai}</Badge>;
+                            return (
+                              <Badge variant="outline" className="text-xs">
+                                {hopDong.trangThai}
+                              </Badge>
+                            );
                         }
                       })()}
-                      {isExpiring && hopDong.trangThai === 'hoatDong' && (
-                        <Badge variant="outline" className="text-xs text-orange-600 border-orange-600">
+                      {isExpiring && hopDong.trangThai === "hoatDong" && (
+                        <Badge
+                          variant="outline"
+                          className="text-xs text-orange-600 border-orange-600"
+                        >
                           Sắp hết hạn
                         </Badge>
                       )}
@@ -1420,11 +1677,12 @@ export default function HopDongPage() {
                     <div className="flex items-center gap-2">
                       <Users className="h-3 w-3 text-gray-400" />
                       <span className="text-gray-600">{nguoiDaiDien}</span>
-                      {hopDong.khachThueId && hopDong.khachThueId.length > 1 && (
-                        <Badge variant="secondary" className="text-[10px]">
-                          +{hopDong.khachThueId.length - 1}
-                        </Badge>
-                      )}
+                      {hopDong.khachThueId &&
+                        hopDong.khachThueId.length > 1 && (
+                          <Badge variant="secondary" className="text-[10px]">
+                            +{hopDong.khachThueId.length - 1}
+                          </Badge>
+                        )}
                     </div>
                   </div>
 
@@ -1432,11 +1690,15 @@ export default function HopDongPage() {
                   <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 border-t pt-2">
                     <div>
                       <Calendar className="h-3 w-3 inline mr-1" />
-                      Từ: {new Date(hopDong.ngayBatDau).toLocaleDateString('vi-VN')}
+                      Từ:{" "}
+                      {new Date(hopDong.ngayBatDau).toLocaleDateString("vi-VN")}
                     </div>
                     <div>
                       <Calendar className="h-3 w-3 inline mr-1" />
-                      Đến: {new Date(hopDong.ngayKetThuc).toLocaleDateString('vi-VN')}
+                      Đến:{" "}
+                      {new Date(hopDong.ngayKetThuc).toLocaleDateString(
+                        "vi-VN",
+                      )}
                     </div>
                   </div>
 
@@ -1445,11 +1707,15 @@ export default function HopDongPage() {
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
                         <span className="text-gray-500">Giá thuê:</span>
-                        <p className="font-semibold text-green-600">{formatCurrency(hopDong.giaThue)}</p>
+                        <p className="font-semibold text-green-600">
+                          {formatCurrency(hopDong.giaThue)}
+                        </p>
                       </div>
                       <div>
                         <span className="text-gray-500">Tiền cọc:</span>
-                        <p className="font-semibold text-blue-600">{formatCurrency(hopDong.tienCoc)}</p>
+                        <p className="font-semibold text-blue-600">
+                          {formatCurrency(hopDong.tienCoc)}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -1497,7 +1763,6 @@ export default function HopDongPage() {
           </div>
         )}
       </div>
-
     </div>
   );
 }

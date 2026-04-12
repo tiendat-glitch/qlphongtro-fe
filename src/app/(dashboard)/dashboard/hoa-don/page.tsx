@@ -993,7 +993,7 @@ export default function HoaDonPage() {
                   <p className="text-xs md:text-sm"><strong>Phòng:</strong> {getPhongName(viewingHoaDon.phong, phongList)}</p>
                   <p className="text-xs md:text-sm"><strong>Khách thuê:</strong> {getKhachThueName(viewingHoaDon.khachThue, khachThueList)}</p>
                   <p className="text-xs md:text-sm"><strong>Hợp đồng:</strong> {
-                    hopDongList.find(hd => hd._id === viewingHoaDon.hopDong)?.maHopDong || 'N/A'
+                    typeof viewingHoaDon.hopDong === 'object' ? viewingHoaDon.hopDong.maHopDong : (hopDongList.find(hd => hd._id === viewingHoaDon.hopDong)?.maHopDong || 'N/A')
                   }</p>
                 </div>
                 <div>
