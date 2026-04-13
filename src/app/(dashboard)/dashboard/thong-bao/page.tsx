@@ -71,6 +71,7 @@ export default function ThongBaoPage() {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingThongBao, setEditingThongBao] = useState<ThongBao | null>(null);
+  const [viewingThongBao, setViewingThongBao] = useState<ThongBao | null>(null);
 
   useEffect(() => {
     document.title = 'Quản lý Thông báo';
@@ -200,9 +201,26 @@ export default function ThongBaoPage() {
     }
   };
 
-  const handleSend = (thongBao: ThongBao) => {
-    // Implement send logic
-    console.log('Sending notification:', thongBao._id);
+  const handleView = (thongBao: ThongBao) => {
+    setViewingThongBao(thongBao);
+  };
+
+  const handleSend = async (thongBao: ThongBao) => {
+    try {
+      await thongBaoService.markAsRead(thongBao._id as string);
+      toast.success('Đã đánh dấu thông báo là "Đã đọc"');
+      
+      // Update local state to reflect the change immediately
+      setThongBaoList(prev => prev.map(t => 
+        t._id === thongBao._id 
+          ? { ...t, daDoc: t.nguoiNhan && t.nguoiNhan.length > 0 ? [t.nguoiNhan[0]] : ['read'] } 
+          : t
+      ));
+      cache.clearCache();
+    } catch (error: any) {
+      console.error('Error marking as read:', error);
+      toast.error('Lỗi khi đánh dấu đã đọc');
+    }
   };
 
   if (loading) {
@@ -418,7 +436,11 @@ export default function ThongBaoPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleView(thongBao)}
+                        >
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button 
@@ -543,6 +565,15 @@ export default function ThongBaoPage() {
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => handleView(thongBao)}
+                      className="flex-1"
+                    >
+                      <Eye className="h-3.5 w-3.5 mr-1" />
+                      Xem
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleSend(thongBao)}
                       className="flex-1"
                     >
@@ -581,6 +612,63 @@ export default function ThongBaoPage() {
           </div>
         )}
       </div>
+
+      {/* Xem Chi Tiết Dialog */}
+      <Dialog open={!!viewingThongBao} onOpenChange={(open) => !open && setViewingThongBao(null)}>
+        <DialogContent className="w-[95vw] md:w-full max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Chi tiết thông báo</DialogTitle>
+            <DialogDescription>
+              Xem nội dung chi tiết của thông báo.
+            </DialogDescription>
+          </DialogHeader>
+          {viewingThongBao && (
+            <div className="space-y-4 text-sm mt-4">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-1">Tiêu đề</h4>
+                <p className="text-gray-700">{viewingThongBao.tieuDe}</p>
+              </div>
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-1">Nội dung</h4>
+                <div className="bg-gray-50 p-3 rounded-md text-gray-700 whitespace-pre-wrap max-h-48 overflow-y-auto">
+                  {viewingThongBao.noiDung}
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Loại thông báo</h4>
+                  <div>{getTypeBadge(viewingThongBao.loai)}</div>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Ngày gửi</h4>
+                  <p className="text-gray-700 flex items-center">
+                    <Calendar className="h-4 w-4 mr-1 text-gray-500" />
+                    {new Date(viewingThongBao.ngayGui).toLocaleDateString('vi-VN')}
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Người nhận</h4>
+                  <p className="text-gray-700 flex flex-wrap gap-1 items-center">
+                    <Users className="h-4 w-4 mr-1 text-gray-500" />
+                    <span className="truncate" title={getKhachThueNames(viewingThongBao.nguoiNhan)}>
+                       {getKhachThueNames(viewingThongBao.nguoiNhan)}
+                    </span>
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-900 mb-1">Trạng thái</h4>
+                  <Badge variant={(viewingThongBao.daDoc && viewingThongBao.daDoc.length > 0) ? "default" : "secondary"}>
+                    {(viewingThongBao.daDoc && viewingThongBao.daDoc.length > 0) ? 'Đã đọc' : 'Chưa đọc'}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button onClick={() => setViewingThongBao(null)}>Đóng</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -613,11 +701,19 @@ function ThongBaoForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Chuyển đổi dữ liệu và loại bỏ các keys không có trong MySQL
+    const { loai, nguoiNhan, toaNha, phong, ...restData } = formData;
+    const payload = {
+      ...restData,
+      loaiThongBao: loai,
+      nguoiChung: nguoiNhan.length > 0 ? nguoiNhan[0] : null
+    };
+    
     try {
       if (thongBao) {
-        await thongBaoService.update(thongBao._id as string, formData);
+        await thongBaoService.update(thongBao._id as string, payload);
       } else {
-        await thongBaoService.create(formData);
+        await thongBaoService.create(payload);
       }
       toast.success(thongBao ? 'Cập nhật thông báo thành công' : 'Tạo thông báo thành công');
       onSuccess();

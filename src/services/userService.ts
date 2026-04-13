@@ -15,16 +15,18 @@ export interface UserProfile {
 
 const mapBackendToFrontend = (data: any): UserProfile => {
   return {
-    _id: data.id?.toString() || '',
-    name: data.ten || '',
-    email: data.email || '',
-    phone: data.soDienThoai || '',
-    address: data.diaChi || '',
-    avatar: data.anhDaiDien || '',
-    role: data.vaiTro || '',
-    createdAt: data.ngayTao || '',
-    lastLogin: data.lastLogin || '',
-    trangThai: data.trangThai || ''
+    _id: data?._id?.toString?.() || data?.id?.toString?.() || '',
+    name: data?.ten || data?.name || '',
+    email: data?.email || '',
+    phone: data?.soDienThoai || data?.phone || '',
+    address: data?.diaChi || data?.address || '',
+    avatar: data?.anhDaiDien || data?.avatar || '',
+    role: data?.vaiTro || data?.role || '',
+    createdAt: data?.ngayTao || data?.createdAt || '',
+    lastLogin: data?.lastLogin || '',
+    trangThai:
+      data?.trangThai ||
+      (typeof data?.isActive === 'boolean' ? (data.isActive ? 'hoatDong' : 'khoa') : '')
   };
 };
 
@@ -54,8 +56,8 @@ export const userService = {
 
   getAllUsers: async (): Promise<UserProfile[]> => {
     const response = await apiClient<any>('/users');
-    // Trả về { success: true, data: [...] }
-    const users = response.data || [];
+    // apiClient đã tự resolve lấy fields data nếu trả về từ backend có format { data: ... }
+    const users = Array.isArray(response) ? response : (response.data || []);
     return users.map(mapBackendToFrontend);
   },
 
@@ -71,7 +73,7 @@ export const userService = {
         trangThai: payload.trangThai || 'hoatDong'
       })
     });
-    return mapBackendToFrontend(data.data);
+    return mapBackendToFrontend(data);
   },
 
   adminUpdateUser: async (id: string, payload: any): Promise<UserProfile> => {
@@ -86,13 +88,17 @@ export const userService = {
         trangThai: payload.trangThai
       })
     });
-    return mapBackendToFrontend(data.data);
+    return mapBackendToFrontend(data);
   },
 
   adminDeleteUser: async (id: string): Promise<boolean> => {
-    const response = await apiClient<any>(`/users/${id}`, {
+    if (!id?.trim()) {
+      throw new Error('Khong tim thay ma nguoi dung de xoa');
+    }
+
+    await apiClient<any>(`/users/${id}`, {
       method: 'DELETE'
     });
-    return response.success;
+    return true;
   }
 };

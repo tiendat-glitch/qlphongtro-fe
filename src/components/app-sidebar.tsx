@@ -112,8 +112,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       },
     ]
 
-    // Thêm mục quản lý admin nếu là admin
-    if (session?.user?.role === 'admin') {
+    // Thêm mục quản lý admin nếu là admin hoặc chuNha
+    if (session?.user?.role === 'admin' || session?.user?.role === 'chuNha') {
       baseItems.splice(3, 0, {
         title: "Quản trị",
         url: "#",
