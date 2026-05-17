@@ -16,16 +16,18 @@ export interface UserProfile {
 const mapBackendToFrontend = (data: any): UserProfile => {
   if (!data) return {} as UserProfile;
   return {
-    id: data.id || '',
-    name: data.ten || '',
-    email: data.email || '',
-    phone: data.soDienThoai || '',
-    address: data.diaChi || '',
-    avatar: data.anhDaiDien || '',
-    role: data.vaiTro || '',
-    createdAt: data.ngayTao || '',
-    lastLogin: data.lastLogin || '',
-    trangThai: data.trangThai || ''
+    id: data?._id?.toString?.() || data?.id?.toString?.() || '',
+    name: data?.ten || data?.name || '',
+    email: data?.email || '',
+    phone: data?.soDienThoai || data?.phone || '',
+    address: data?.diaChi || data?.address || '',
+    avatar: data?.anhDaiDien || data?.avatar || '',
+    role: data?.vaiTro || data?.role || '',
+    createdAt: data?.ngayTao || data?.createdAt || '',
+    lastLogin: data?.lastLogin || '',
+    trangThai:
+      data?.trangThai ||
+      (typeof data?.isActive === 'boolean' ? (data.isActive ? 'hoatDong' : 'khoa') : '')
   };
 };
 
@@ -55,9 +57,9 @@ export const userService = {
 
   getAllUsers: async (): Promise<UserProfile[]> => {
     const response = await apiClient<any>('/users');
-    const users = response.data || response || [];
-    const userArray = Array.isArray(users) ? users : [];
-    return userArray.map(mapBackendToFrontend);
+    // apiClient đã tự resolve lấy fields data nếu trả về từ backend có format { data: ... }
+    const users = Array.isArray(response) ? response : (response.data || []);
+    return users.map(mapBackendToFrontend);
   },
 
   adminCreateUser: async (payload: any): Promise<UserProfile> => {
@@ -72,7 +74,7 @@ export const userService = {
         trangThai: payload.trangThai || 'hoatDong'
       })
     });
-    return mapBackendToFrontend(data.data || data);
+    return mapBackendToFrontend(data);
   },
 
   adminUpdateUser: async (id: string | number, payload: any): Promise<UserProfile> => {
@@ -87,13 +89,17 @@ export const userService = {
         trangThai: payload.trangThai
       })
     });
-    return mapBackendToFrontend(data.data || data);
+    return mapBackendToFrontend(data);
   },
 
-  adminDeleteUser: async (id: string | number): Promise<boolean> => {
-    const response = await apiClient<any>(`/users/${id}`, {
+  adminDeleteUser: async (id: string): Promise<boolean> => {
+    if (!id?.trim()) {
+      throw new Error('Khong tim thay ma nguoi dung de xoa');
+    }
+
+    await apiClient<any>(`/users/${id}`, {
       method: 'DELETE'
     });
-    return response.success;
+    return true;
   }
 };

@@ -96,7 +96,7 @@ export default function AccountManagementPage() {
     name: '',
     phone: '',
     role: '',
-    isActive: true
+    trangThai: 'hoatDong'
   });
 
   useEffect(() => {
@@ -104,8 +104,8 @@ export default function AccountManagementPage() {
   }, []);
 
   useEffect(() => {
-    // Chỉ fetch 1 lần duy nhất khi user là admin
-    if (session?.user?.role === 'admin' && !hasFetchedRef.current) {
+    // Chỉ fetch 1 lần duy nhất khi user là admin hoặc chuNha
+    if ((session?.user?.role === 'admin' || session?.user?.role === 'chuNha') && !hasFetchedRef.current) {
       hasFetchedRef.current = true;
       fetchUsers(false); // Sử dụng cache nếu có
     }
@@ -199,7 +199,7 @@ export default function AccountManagementPage() {
       name: getUserName(user),
       phone: getUserPhone(user),
       role: getUserRole(user),
-      isActive: getUserIsActive(user)
+      trangThai: getUserIsActive(user) ? 'hoatDong' : 'khoa'
     });
     setIsEditDialogOpen(true);
   };
@@ -238,13 +238,13 @@ export default function AccountManagementPage() {
     (user.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (session?.user?.role !== 'admin') {
+  if (session?.user?.role !== 'admin' && session?.user?.role !== 'chuNha') {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-center">
           <Shield className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Không có quyền truy cập</h2>
-          <p className="text-gray-600">Bạn cần quyền quản trị viên để truy cập trang này.</p>
+          <p className="text-gray-600">Bạn cần quyền quản trị viên hoặc chủ nhà để truy cập trang này.</p>
         </div>
       </div>
     );
@@ -586,6 +586,18 @@ export default function AccountManagementPage() {
                   <SelectItem value="nhanVien" className="text-sm">Nhân viên</SelectItem>
                   <SelectItem value="chuNha" className="text-sm">Chủ nhà</SelectItem>
                   <SelectItem value="admin" className="text-sm">Quản trị viên</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-status" className="text-xs md:text-sm">Trạng thái</Label>
+              <Select value={editUserData.trangThai} onValueChange={(value) => setEditUserData({ ...editUserData, trangThai: value })}>
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="Chọn trạng thái" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hoatDong" className="text-sm">Hoạt động</SelectItem>
+                  <SelectItem value="khoa" className="text-sm">Khóa</SelectItem>
                 </SelectContent>
               </Select>
             </div>
