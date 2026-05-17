@@ -33,28 +33,16 @@ import { toast } from 'sonner';
 import { invalidateEntityCaches } from '@/lib/cache-invalidation';
 
 // Helper functions
-const getPhongName = (phongId: string | any, phongList: Phong[]) => {
+const getPhongName = (phongId: string | number | any, phongList: Phong[]) => {
   if (!phongId) return 'N/A';
-  if (typeof phongId === 'object' && phongId.maPhong) {
-    return phongId.maPhong;
-  }
-  if (typeof phongId === 'string') {
-    const phong = phongList.find(p => p._id === phongId);
-    return phong?.maPhong || 'N/A';
-  }
-  return 'N/A';
+  const phong = phongList.find(p => p.id?.toString() === phongId.toString());
+  return phong?.maPhong || 'N/A';
 };
 
-const getKhachThueName = (khachThueId: string | any, khachThueList: KhachThue[]) => {
+const getKhachThueName = (khachThueId: string | number | any, khachThueList: KhachThue[]) => {
   if (!khachThueId) return 'N/A';
-  if (typeof khachThueId === 'object' && khachThueId.hoTen) {
-    return khachThueId.hoTen;
-  }
-  if (typeof khachThueId === 'string') {
-    const khachThue = khachThueList.find(k => k._id === khachThueId);
-    return khachThue?.hoTen || 'N/A';
-  }
-  return 'N/A';
+  const khachThue = khachThueList.find(k => k.id?.toString() === khachThueId.toString());
+  return khachThue?.hoTen || 'N/A';
 };
 
 export default function ThemMoiHoaDonPage() {
@@ -150,17 +138,16 @@ export default function ThemMoiHoaDonPage() {
     }
   };
 
-  // Auto-fill form data when contract is selected
   useEffect(() => {
     if (formData.hopDong) {
-      const selectedHopDong = hopDongList.find(hd => hd._id === formData.hopDong);
+      const selectedHopDong = hopDongList.find(hd => hd.id?.toString() === formData.hopDong.toString());
       if (selectedHopDong) {
         console.log('Auto-filling form data from contract:', selectedHopDong);
         
         setFormData(prev => ({
           ...prev,
-          phong: selectedHopDong.phong,
-          khachThue: selectedHopDong.nguoiDaiDien,
+          phong: selectedHopDong.phong_id || '',
+          khachThue: selectedHopDong.nguoiDaiDien_id || '',
           tienPhong: selectedHopDong.giaThue,
           phiDichVu: selectedHopDong.phiDichVu || [],
           chiSoDienBanDau: 0,
@@ -185,12 +172,16 @@ export default function ThemMoiHoaDonPage() {
     const soDien = formData.chiSoDienCuoiKy - formData.chiSoDienBanDau;
     const soNuoc = formData.chiSoNuocCuoiKy - formData.chiSoNuocBanDau;
     
-    const selectedHopDong = hopDongList.find(hd => hd._id === formData.hopDong);
+    const selectedHopDong = hopDongList.find(hd => hd.id.toString() === formData.hopDong.toString());
     const giaDien = selectedHopDong?.giaDien || 0;
     const giaNuoc = selectedHopDong?.giaNuoc || 0;
     
-    const tienDienTinh = soDien * giaDien;
-    const tienNuocTinh = soNuoc * giaNuoc;
+    // Đảm bảo số lượng không âm
+    const soDienActual = Math.max(0, soDien);
+    const soNuocActual = Math.max(0, soNuoc);
+
+    const tienDienTinh = soDienActual * giaDien;
+    const tienNuocTinh = soNuocActual * giaNuoc;
     
     const total = formData.tienPhong + tienDienTinh + tienNuocTinh + totalPhiDichVu;
     const conLai = total - formData.daThanhToan;
@@ -389,12 +380,9 @@ export default function ThemMoiHoaDonPage() {
                           hopDongList
                             .filter(hd => hd.trangThai === 'hoatDong')
                             .map((hopDong) => {
-                              const phongObj = typeof hopDong.phong === 'object' ? (hopDong.phong as Phong) : null;
-                              const phongName = phongObj?.maPhong || getPhongName(hopDong.phong as string, phongList);
-                              const toaNhaName = phongObj?.toaNha && typeof phongObj.toaNha === 'object' 
-                                ? (phongObj.toaNha as any).tenToaNha 
-                                : 'N/A';
-                              const nguoiDaiDienName = getKhachThueName(hopDong.nguoiDaiDien, khachThueList);
+                              const phongName = (hopDong as any).maPhong || getPhongName(hopDong.phong_id, phongList);
+                              const toaNhaName = (hopDong as any).tenToaNha || 'N/A';
+                              const nguoiDaiDienName = (hopDong as any).tenNguoiDaiDien || getKhachThueName(hopDong.nguoiDaiDien_id, khachThueList);
                               
                               // Xử lý ngày tháng an toàn
                               const formatDate = (date: any) => {
@@ -411,10 +399,12 @@ export default function ThemMoiHoaDonPage() {
                               const ngayBatDau = formatDate(hopDong.ngayBatDau);
                               const ngayKetThuc = formatDate(hopDong.ngayKetThuc);
                               
+                              const keyVal = hopDong.id || '';
+                              
                               return (
                                 <SelectItem 
-                                  key={hopDong._id} 
-                                  value={hopDong._id!}
+                                  key={keyVal} 
+                                  value={keyVal.toString()}
                                   className="cursor-pointer"
                                 >
                                   <div className="flex flex-col gap-1 py-1">
@@ -629,7 +619,7 @@ export default function ThemMoiHoaDonPage() {
                         <td className="border border-gray-200 px-4 py-3">
                           <div className="flex items-center gap-1">
                             <span className="font-medium">
-                              {hopDongList.find(hd => hd._id === formData.hopDong)?.giaDien || 0}
+                              {hopDongList.find(hd => hd.id.toString() === formData.hopDong.toString())?.giaDien || 0}
                             </span>
                             <span className="text-xs text-gray-500">VNĐ/kWh</span>
                           </div>
@@ -709,7 +699,7 @@ export default function ThemMoiHoaDonPage() {
                         <td className="border border-gray-200 px-4 py-3">
                           <div className="flex items-center gap-1">
                             <span className="font-medium">
-                              {hopDongList.find(hd => hd._id === formData.hopDong)?.giaNuoc || 0}
+                              {hopDongList.find(hd => hd.id.toString() === formData.hopDong.toString())?.giaNuoc || 0}
                             </span>
                             <span className="text-xs text-gray-500">VNĐ/m³</span>
                           </div>

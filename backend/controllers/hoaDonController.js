@@ -222,6 +222,10 @@ exports.deleteHoaDon = async (req, res) => {
       return errorResponse(res, 404, "Không tìm thấy hóa đơn");
     }
 
+    if (req.user && req.user.vaiTro === "nhanVien") {
+      return errorResponse(res, 403, "Nhân viên không có quyền xóa hóa đơn");
+    }
+
     await HoaDon.delete(req.params.id);
     return successResponse(res, "Xóa hóa đơn thành công");
   } catch (error) {

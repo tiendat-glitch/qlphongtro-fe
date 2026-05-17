@@ -24,7 +24,7 @@ export interface PhiDichVu {
 }
 
 export interface NguoiDung {
-  _id?: string;
+  id?: number | string;
   ten: string;
   email: string;
   matKhau: string;
@@ -32,27 +32,28 @@ export interface NguoiDung {
   vaiTro: 'admin' | 'chuNha' | 'nhanVien';
   anhDaiDien?: string;
   trangThai: 'hoatDong' | 'khoa';
-  ngayTao: Date;
-  ngayCapNhat: Date;
+  ngayTao: Date | string;
+  ngayCapNhat: Date | string;
 }
 
 export interface ToaNha {
-  _id?: string;
+  id?: number | string;
   tenToaNha: string;
   diaChi: DiaChi;
   moTa?: string;
   anhToaNha: string[];
-  chuSoHuu: string; // ObjectId ref NguoiDung
+  chuSoHuu_id: number | string;
   tongSoPhong: number;
   tienNghiChung: string[];
-  ngayTao: Date;
-  ngayCapNhat: Date;
+  ngayTao: Date | string;
+  ngayCapNhat: Date | string;
 }
 
 export interface Phong {
-  _id?: string;
+  id?: number | string;
   maPhong: string;
-  toaNha: string | { _id: string; tenToaNha: string; [key: string]: any }; // ref ToaNha
+  toaNha_id: number | string;
+  tenToaNha?: string;
   tang: number;
   dienTich: number;
   giaThue: number;
@@ -62,72 +63,40 @@ export interface Phong {
   tienNghi: string[];
   trangThai: 'trong' | 'daDat' | 'dangThue' | 'baoTri';
   soNguoiToiDa: number;
-  ngayTao: Date;
-  ngayCapNhat: Date;
-  hopDongHienTai?: {
-    _id: string;
-    khachThueId: Array<{
-      _id: string;
-      hoTen: string;
-      soDienThoai: string;
-    }>;
-    nguoiDaiDien: {
-      _id: string;
-      hoTen: string;
-      soDienThoai: string;
-    };
-  };
+  ngayTao: Date | string;
+  ngayCapNhat: Date | string;
 }
 
 export interface KhachThue {
-  _id?: string;
+  id?: number | string;
   hoTen: string;
   soDienThoai: string;
   email?: string;
   cccd: string;
-  ngaySinh: Date;
+  ngaySinh: Date | string;
   gioiTinh: 'nam' | 'nu' | 'khac';
   queQuan: string;
-  anhCCCD: AnhCCCD;
+  anhCCCD: AnhCCCD | null;
   ngheNghiep?: string;
   matKhau?: string;
   trangThai: 'dangThue' | 'daTraPhong' | 'chuaThue';
-  ngayTao: Date;
-  ngayCapNhat: Date;
-  hopDongHienTai?: {
-    _id: string;
-    maHopDong?: string;
-    phong: {
-      _id: string;
-      maPhong: string;
-      toaNha: {
-        _id: string;
-        tenToaNha: string;
-      };
-    };
-  };
-  hopDongHienTaiList?: Array<{
-    _id: string;
-    maHopDong?: string;
-    phong: {
-      _id: string;
-      maPhong: string;
-      toaNha: {
-        _id: string;
-        tenToaNha: string;
-      };
-    };
-  }>;
+  ngayTao: Date | string;
+  ngayCapNhat: Date | string;
+  // Thông tin mở rộng qua JOIN nếu cần
+  phong_id?: number | string;
+  maPhong?: string;
 }
 
 export interface HopDong {
-  _id?: string;
+  id?: number | string;
   maHopDong: string;
-  phong: string | { _id: string; maPhong: string; toaNha?: { _id?: string; tenToaNha: string } | string; [key: string]: any };
-  khachThueId: Array<string | { _id: string; hoTen: string; soDienThoai?: string; [key: string]: any }>;
-  nguoiDaiDien: string | { _id: string; hoTen: string; soDienThoai?: string; [key: string]: any };
-  ngayBatDau: Date;
-  ngayKetThuc: Date;
+  phong_id: number | string;
+  maPhong?: string;
+  khachThue_id?: number | string;
+  nguoiDaiDien_id: number | string;
+  tenNguoiDaiDien?: string;
+  ngayBatDau: Date | string;
+  ngayKetThuc: Date | string;
   giaThue: number;
   tienCoc: number;
   chuKyThanhToan: 'thang' | 'quy' | 'nam';
@@ -140,13 +109,14 @@ export interface HopDong {
   phiDichVu: PhiDichVu[];
   trangThai: 'hoatDong' | 'hetHan' | 'daHuy';
   fileHopDong?: string;
-  ngayTao: Date;
-  ngayCapNhat: Date;
+  ngayTao: Date | string;
+  ngayCapNhat: Date | string;
 }
 
 export interface ChiSoDienNuoc {
-  _id?: string;
-  phong: string; // ObjectId ref Phong
+  id?: number | string;
+  phong_id: number | string;
+  maPhong?: string;
   thang: number;
   nam: number;
   chiSoDienCu: number;
@@ -157,20 +127,20 @@ export interface ChiSoDienNuoc {
   soNuocTieuThu: number;
   anhChiSoDien?: string;
   anhChiSoNuoc?: string;
-  nguoiGhi: string; // ObjectId ref NguoiDung
-  ngayGhi: Date;
-  ngayTao: Date;
+  nguoiGhi_id: number | string;
+  ngayGhi: Date | string;
+  ngayTao: Date | string;
 }
 
 export interface HoaDon {
-  _id?: string;
+  id?: number | string;
   maHoaDon: string;
-  hopDong: string | { _id: string; [key: string]: any }; // ObjectId ref HopDong
-  hopDong_id?: string;
-  phong: string | { _id: string; maPhong: string; toaNha?: { _id?: string; tenToaNha: string } | string; [key: string]: any };
-  phong_id?: string;
-  khachThue: string | { _id: string; hoTen: string; soDienThoai?: string; [key: string]: any };
-  khachThue_id?: string;
+  hopDong_id: number | string;
+  maHopDong?: string;
+  phong_id: number | string;
+  maPhong?: string;
+  khachThue_id: number | string;
+  tenKhachThue?: string;
   thang: number;
   nam: number;
   tienPhong: number;
@@ -194,30 +164,27 @@ export interface HoaDon {
 }
 
 export interface ThanhToan {
-  id?: number;
-  _id?: string;
-  hoaDon: string | HoaDon; // ObjectId ref HoaDon
-  hoaDon_id?: string | number;
+  id?: number | string;
+  hoaDon_id: number | string;
+  maHoaDon?: string;
+  maPhong?: string;
   soTien: number;
   phuongThuc: 'tienMat' | 'chuyenKhoan' | 'viDienTu';
   thongTinChuyenKhoan?: ThongTinChuyenKhoan;
   thongTinChuyenKhoan_nganHang?: string | null;
   thongTinChuyenKhoan_soGiaoDich?: string | null;
   ngayThanhToan: Date | string;
-  nguoiNhan: string; // ObjectId ref NguoiDung
-  nguoiNhan_id?: string | number;
-  maHoaDon?: string;
-  maPhong?: string;
+  nguoiNhan_id: number | string;
+  tenNguoiNhan?: string;
   tenNguoiDaiDien?: string;
   hoTen?: string;
-  tenNguoiNhan?: string;
   ghiChu?: string;
   anhBienLai?: string;
   ngayTao: Date | string;
 }
 
 export interface ThanhToanCreateRequest {
-  hoaDon_id: number;
+  hoaDon_id: number | string;
   soTien: number;
   phuongThuc: 'tienMat' | 'chuyenKhoan' | 'viDienTu';
   ngayThanhToan: Date | string;
@@ -228,17 +195,24 @@ export interface ThanhToanCreateRequest {
 }
 
 export interface SuCo {
-  _id?: string;
-  phong: string | { _id: string; maPhong: string };
-  khachThue: string | { _id: string; hoTen: string; soDienThoai?: string };
-  nguoiBaoCao?: string | { _id: string; hoTen: string; soDienThoai?: string }; // Alias cho khachThue
+  id?: number | string;
+  phong_id: number | string;
+  maPhong?: string;
+  khachThue_id: number | string;
+  tenKhachThue?: string;
+  hoTenKhachThue?: string;
+  nguoiBao_id?: number | string;
+  tenNguoiBao?: string;
   tieuDe: string;
   moTa: string;
-  anhSuCo: string[];
+  hinhAnh?: string[];
+  anhSuCo?: string[];
   loaiSuCo: 'dienNuoc' | 'noiThat' | 'vesinh' | 'anNinh' | 'khac';
-  mucDoUuTien: 'thap' | 'trungBinh' | 'cao' | 'khancap';
+  loai?: string;
+  mucDo: 'thap' | 'trungBinh' | 'cao' | 'khancap';
+  mucDoUuTien?: string;
   trangThai: 'moi' | 'dangXuLy' | 'daXong' | 'daHuy';
-  nguoiXuLy?: string; // ObjectId ref NguoiDung
+  nguoiXuLy_id?: number | string;
   ghiChuXuLy?: string;
   ngayBaoCao: string | Date;
   ngayXuLy?: string | Date;
@@ -248,17 +222,20 @@ export interface SuCo {
 }
 
 export interface ThongBao {
-  _id?: string;
+  id?: number | string;
   tieuDe: string;
   noiDung: string;
-  loai: 'chung' | 'hoaDon' | 'suCo' | 'hopDong' | 'khac';
-  nguoiGui: string; // ObjectId ref NguoiDung
-  nguoiNhan: string[]; // ObjectId[] ref KhachThue hoặc NguoiDung
-  phong?: string[]; // ObjectId[] ref Phong
-  toaNha?: string; // ObjectId ref ToaNha
-  daDoc: string[]; // ObjectId[] danh sách người đã đọc
-  ngayGui: Date;
-  ngayTao: Date;
+  loaiThongBao: 'chung' | 'hoaDon' | 'suCo' | 'hopDong' | 'khac';
+  loai?: string;
+  nguoiGui_id: number | string;
+  tenNguoiGui?: string;
+  nguoiNhan_id?: number | string;
+  tenNguoiNhan?: string;
+  phong_id?: number | string;
+  toaNha_id?: number | string;
+  trangThai: 'chuaDoc' | 'daDoc';
+  ngayGui: Date | string;
+  ngayTao: Date | string;
 }
 
 // Types cho API responses

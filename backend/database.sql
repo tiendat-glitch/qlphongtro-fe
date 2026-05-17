@@ -210,6 +210,3 @@ CREATE TABLE IF NOT EXISTS ThongBao (
     ngayTao DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (nguoiChung) REFERENCES NguoiDung(id) ON DELETE CASCADE
 );
-
--- Seed Admin User: password là 123456 (hash sẵn hoặc xử lý sau)
--- INSERT INTO NguoiDung (ten, email, matKhau, vaiTro) VALUES ('Admin', 'admin@phongtro.com', '$2y$10$X...', 'admin');

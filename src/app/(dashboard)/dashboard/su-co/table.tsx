@@ -195,38 +195,30 @@ type SuCoTableProps = {
   typeOverrides?: Partial<Record<string, SuCo['loaiSuCo']>>
 }
 
-const getPhongName = (phong: string | { maPhong: string }, phongList: Phong[]) => {
-  if (typeof phong === 'string') {
-    const phongObj = phongList.find(p => p._id === phong)
-    return phongObj?.maPhong || 'N/A'
-  }
-  return phong?.maPhong || 'N/A'
+const getPhongName = (suCo: SuCo) => {
+  return (suCo as any).maPhong || 'N/A'
 }
 
-const getKhachThueName = (khachThue: string | { hoTen: string }, khachThueList: KhachThue[]) => {
-  if (typeof khachThue === 'string') {
-    const khachThueObj = khachThueList.find(k => k._id === khachThue)
-    return khachThueObj?.hoTen || 'N/A'
-  }
-  return khachThue?.hoTen || 'N/A'
+const getKhachThueName = (suCo: SuCo) => {
+  return (suCo as any).tenKhachThue || (suCo as any).tenNguoiBao || 'N/A'
 }
 
 const getResolvedIncidentType = (
   suCo: SuCo,
   typeOverrides?: Partial<Record<string, SuCo['loaiSuCo']>>
 ) => {
-  if (!suCo._id) {
+  if (!suCo.id) {
     return suCo.loaiSuCo
   }
 
-  return typeOverrides?.[suCo._id] ?? suCo.loaiSuCo
+  return typeOverrides?.[suCo.id.toString()] ?? suCo.loaiSuCo
 }
 
 const createColumns = (props: SuCoTableProps): ColumnDef<SuCo>[] => [
   {
     id: "drag",
     header: () => null,
-    cell: ({ row }) => <DragHandle id={row.original._id!} />,
+    cell: ({ row }) => <DragHandle id={row.original.id!.toString()} />,
     enableHiding: false,
   },
   {
@@ -275,7 +267,7 @@ const createColumns = (props: SuCoTableProps): ColumnDef<SuCo>[] => [
       <div className="flex items-center gap-2">
         <Users className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm">
-          {getPhongName(row.original.phong, props.phongList)}
+          {getPhongName(row.original)}
         </span>
       </div>
     ),
@@ -284,17 +276,11 @@ const createColumns = (props: SuCoTableProps): ColumnDef<SuCo>[] => [
     accessorKey: "khachThue",
     header: "Khách thuê",
     cell: ({ row }) => {
-      const khachThue = row.original.khachThue
       return (
         <div className="min-w-32">
           <div className="font-medium">
-            {getKhachThueName(khachThue, props.khachThueList)}
+            {getKhachThueName(row.original)}
           </div>
-          {typeof khachThue === 'object' && khachThue?.soDienThoai && (
-            <div className="text-xs text-muted-foreground">
-              {khachThue.soDienThoai}
-            </div>
-          )}
         </div>
       )
     },
@@ -309,9 +295,9 @@ const createColumns = (props: SuCoTableProps): ColumnDef<SuCo>[] => [
     },
   },
   {
-    accessorKey: "mucDoUuTien",
+    accessorKey: "mucDo",
     header: "Mức độ",
-    cell: ({ row }) => getPriorityBadge(row.original.mucDoUuTien),
+    cell: ({ row }) => getPriorityBadge((row.original as any).mucDo || row.original.mucDoUuTien),
   },
   {
     accessorKey: "trangThai",
@@ -324,7 +310,7 @@ const createColumns = (props: SuCoTableProps): ColumnDef<SuCo>[] => [
           {suCo.trangThai === 'moi' && (
             <Select
               value={suCo.trangThai}
-              onValueChange={(value) => props.onStatusChange(suCo._id!, value)}
+              onValueChange={(value) => props.onStatusChange(suCo.id!.toString(), value)}
             >
               <SelectTrigger className="w-32 h-8">
                 <SelectValue />
@@ -338,7 +324,7 @@ const createColumns = (props: SuCoTableProps): ColumnDef<SuCo>[] => [
           {suCo.trangThai === 'dangXuLy' && (
             <Select
               value={suCo.trangThai}
-              onValueChange={(value) => props.onStatusChange(suCo._id!, value)}
+              onValueChange={(value) => props.onStatusChange(suCo.id!.toString(), value)}
             >
               <SelectTrigger className="w-32 h-8">
                 <SelectValue />
@@ -393,7 +379,7 @@ const createColumns = (props: SuCoTableProps): ColumnDef<SuCo>[] => [
           <DropdownMenuSeparator />
           <DropdownMenuItem 
             className="text-destructive"
-            onClick={() => props.onDelete(row.original._id!)}
+            onClick={() => props.onDelete(row.original.id!.toString())}
           >
             <Trash2 className="mr-2 h-4 w-4" />
             Xóa
@@ -407,7 +393,7 @@ const createColumns = (props: SuCoTableProps): ColumnDef<SuCo>[] => [
 
 function DraggableRow({ row }: { row: Row<SuCo> }) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
-    id: row.original._id!,
+    id: row.original.id!.toString(),
   })
 
   return (
@@ -472,7 +458,7 @@ export function SuCoDataTable(props: SuCoDataTableProps) {
   )
 
   const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => data?.map(({ _id }) => _id!) || [],
+    () => data?.map(({ id }) => id!.toString()) || [],
     [data]
   )
 
@@ -486,7 +472,7 @@ export function SuCoDataTable(props: SuCoDataTableProps) {
       columnFilters,
       pagination,
     },
-    getRowId: (row) => row._id!,
+    getRowId: (row) => row.id!.toString(),
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,

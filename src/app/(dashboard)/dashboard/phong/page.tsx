@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCache } from '@/hooks/use-cache';
+import { usePermissions } from '@/hooks/use-permissions';
 import { phongService } from '@/services/phongService';
 import { toaNhaService } from '@/services/toaNhaService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,6 +61,7 @@ import { invalidateEntityCaches } from '@/lib/cache-invalidation';
 export default function PhongPage() {
   const phongCache = useCache<Phong[]>({ key: CACHE_KEYS.phongList, duration: 300000 });
   const toaNhaCache = useCache<ToaNha[]>({ key: CACHE_KEYS.toaNhaList, duration: 300000 });
+  const { canDelete } = usePermissions();
   
   const [phongList, setPhongList] = useState<Phong[]>([]);
   const [toaNhaList, setToaNhaList] = useState<ToaNha[]>([]);
@@ -83,7 +85,7 @@ export default function PhongPage() {
   useEffect(() => {
     fetchPhong();
   }, []);
-
+  console.log('data', FormData);
   const fetchPhong = async (forceRefresh = false) => {
     try {
       setLoading(true);
@@ -141,9 +143,9 @@ export default function PhongPage() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string | number) => {
     try {
-      await phongService.delete(id);
+      await phongService.delete(id.toString());
       invalidateEntityCaches('phong');
       await fetchPhong(true);
       toast.success('Xóa phòng thành công!');
@@ -165,10 +167,8 @@ export default function PhongPage() {
 
   const handleViewTenants = (phong: Phong) => {
     const phongData = phong as any;
-    const hopDong = phongData.hopDongHienTai;
-    
-    if (hopDong && hopDong.khachThueId && hopDong.khachThueId.length > 0) {
-      setViewingTenants(hopDong.khachThueId);
+    if (phong.khachThueList && phong.khachThueList.length > 0) {
+      setViewingTenants(phong.khachThueList);
       setViewingTenantsPhongName(phong.maPhong);
       setIsTenantsViewerOpen(true);
     } else {
@@ -304,6 +304,7 @@ export default function PhongPage() {
             toaNhaList={toaNhaList}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            canDelete={canDelete}
             onViewImages={handleViewImages}
             onViewTenants={handleViewTenants}
             searchTerm={searchTerm}
@@ -343,7 +344,7 @@ export default function PhongPage() {
               <SelectContent>
                 <SelectItem value="all" className="text-sm">Tất cả tòa nhà</SelectItem>
                 {toaNhaList.map((toaNha) => (
-                  <SelectItem key={toaNha._id} value={toaNha._id!} className="text-sm">
+                  <SelectItem key={toaNha.id} value={toaNha.id?.toString() || ''} className="text-sm">
                     {toaNha.tenToaNha}
                   </SelectItem>
                 ))}
@@ -394,7 +395,7 @@ export default function PhongPage() {
               };
 
               return (
-                <Card key={`${phong._id ?? (phong as any).id ?? 'phong'}-${index}`} className="hover:shadow-md transition-shadow">
+                <Card key={`${phong.id ?? 'phong'}-${index}`} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-3">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
@@ -429,12 +430,8 @@ export default function PhongPage() {
 
                     {/* Thông tin người thuê */}
                     {(() => {
-                      const phongData = phong as any;
-                      const hopDong = phongData.hopDongHienTai;
-                      
-                      if (hopDong && hopDong.khachThueId && hopDong.khachThueId.length > 0) {
-                        const nguoiDaiDien = hopDong.nguoiDaiDien;
-                        const soLuongKhachThue = hopDong.khachThueId.length;
+                      if (phong.khachThueList && phong.khachThueList.length > 0) {
+                        const soLuongKhachThue = phong.khachThueList.length;
                         
                         return (
                           <div className="mb-3 p-2 bg-blue-50 rounded-md border border-blue-200">
@@ -443,11 +440,11 @@ export default function PhongPage() {
                               <span className="text-xs font-medium text-blue-900">Người thuê</span>
                             </div>
                             <div className="text-sm text-gray-900 font-medium">
-                              {nguoiDaiDien?.hoTen || 'N/A'}
+                              {(phong as any).tenNguoiDaiDien || 'N/A'}
                             </div>
-                            {nguoiDaiDien?.soDienThoai && (
+                            {(phong as any).sdtNguoiDaiDien && (
                               <div className="text-xs text-gray-600">
-                                {nguoiDaiDien.soDienThoai}
+                                {(phong as any).sdtNguoiDaiDien}
                               </div>
                             )}
                             {soLuongKhachThue > 1 && (
@@ -517,12 +514,14 @@ export default function PhongPage() {
                           <Edit className="h-3.5 w-3.5 mr-1" />
                           Sửa
                         </Button>
-                        <DeleteConfirmPopover
-                          onConfirm={() => handleDelete(phong._id!)}
-                          title="Xóa phòng"
-                          description="Bạn có chắc chắn muốn xóa phòng này?"
-                          className="text-black hover:text-red-700 hover:bg-red-50"
-                        />
+                        {canDelete && (
+                          <DeleteConfirmPopover
+                            onConfirm={() => handleDelete(phong.id!)}
+                            title="Xóa phòng"
+                            description="Bạn có chắc chắn muốn xóa phòng này?"
+                            className="text-black hover:text-red-700 hover:bg-red-50"
+                          />
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -592,7 +591,7 @@ export default function PhongPage() {
           
           <div className="space-y-3 md:space-y-4 py-2 md:py-4">
             {viewingTenants.map((tenant, index) => (
-              <Card key={tenant._id || index} className="overflow-hidden">
+              <Card key={tenant.id || index} className="overflow-hidden">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-start gap-3 md:gap-4">
                     <div className="flex-shrink-0">
@@ -634,7 +633,7 @@ export default function PhongPage() {
   );
 }
 
-// Form component for adding/editing phong
+// Form component cho adding/editing phong
 function PhongForm({ 
   phong, 
   toaNhaList,
@@ -646,19 +645,11 @@ function PhongForm({
   onClose: () => void;
   onSuccess: () => void;
 }) {
-  // Helper function để lấy toaNha ID
-  const getToaNhaId = (toaNha: string | { _id: string }) => {
-    if (typeof toaNha === 'object' && toaNha !== null) {
-      return toaNha._id || '';
-    } else if (typeof toaNha === 'string') {
-      return toaNha;
-    }
-    return '';
-  };
+  // getToaNhaId 
 
   const [formData, setFormData] = useState({
     maPhong: phong?.maPhong || '',
-    toaNha: phong?.toaNha ? getToaNhaId(phong.toaNha) : '',
+    toaNha_id: phong?.toaNha_id || '',
     tang: phong?.tang || 1,
     dienTich: phong?.dienTich || 0,
     giaThue: phong?.giaThue || 0,
@@ -669,19 +660,12 @@ function PhongForm({
     soNguoiToiDa: phong?.soNguoiToiDa || 1,
     trangThai: phong?.trangThai || 'trong',
   });
-
-  // Cập nhật formData khi phong thay đổi
   useEffect(() => {
     if (phong) {
-      const toaNhaId = getToaNhaId(phong.toaNha);
-      
-      console.log('Editing phong:', phong);
-      console.log('toaNha object:', phong.toaNha);
-      console.log('toaNha ID:', toaNhaId);
       
       setFormData({
         maPhong: phong.maPhong || '',
-        toaNha: toaNhaId,
+        toaNha_id: phong.toaNha_id || '',
         tang: phong.tang || 1,
         dienTich: phong.dienTich || 0,
         giaThue: phong.giaThue || 0,
@@ -695,7 +679,7 @@ function PhongForm({
     } else {
       setFormData({
         maPhong: '',
-        toaNha: '',
+        toaNha_id: '',
         tang: 1,
         dienTich: 0,
         giaThue: 0,
@@ -739,7 +723,7 @@ function PhongForm({
     
     try {
       if (phong) {
-        await phongService.update(phong._id as string, formData);
+        await phongService.update(phong.id as string, formData);
       } else {
         await phongService.create(formData);
       }
@@ -789,13 +773,13 @@ function PhongForm({
             
             <div className="space-y-2">
               <Label htmlFor="toaNha" className="text-sm">Tòa nhà</Label>
-              <Select value={formData.toaNha} onValueChange={(value) => setFormData(prev => ({ ...prev, toaNha: value }))}>
+              <Select value={formData.toaNha_id?.toString()} onValueChange={(value) => setFormData(prev => ({ ...prev, toaNha_id: value }))}>
                 <SelectTrigger className="text-sm">
                   <SelectValue placeholder="Chọn tòa nhà" />
                 </SelectTrigger>
                 <SelectContent>
                   {toaNhaList.map((toaNha) => (
-                    <SelectItem key={toaNha._id} value={toaNha._id!} className="text-sm">
+                    <SelectItem key={toaNha.id} value={toaNha.id?.toString() || ''} className="text-sm">
                       {toaNha.tenToaNha}
                     </SelectItem>
                   ))}

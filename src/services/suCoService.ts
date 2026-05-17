@@ -9,12 +9,12 @@ export const suCoService = {
             if (query) queryStr = `?${query}`;
         }
         const data = await apiClient<any[]>('/su-co' + queryStr);
-        return data.map(item => ({ ...item, _id: item.id.toString() })) as SuCo[];
+        return data as SuCo[];
     },
 
     getById: async (id: number | string) => {
         const data = await apiClient<any>(`/su-co/${id}`);
-        return { ...data, _id: data.id.toString() } as SuCo;
+        return data as SuCo;
     },
 
     create: async (data: Partial<SuCo>) => {
@@ -22,7 +22,7 @@ export const suCoService = {
             method: 'POST',
             body: JSON.stringify(data),
         });
-        return { ...res, _id: res.id.toString() } as SuCo;
+        return res as SuCo;
     },
 
     update: async (id: number | string, data: Partial<SuCo>) => {
@@ -30,7 +30,7 @@ export const suCoService = {
             method: 'PUT',
             body: JSON.stringify(data),
         });
-        return { ...res, _id: res.id.toString() } as SuCo;
+        return res as SuCo;
     },
 
     delete: async (id: number | string) => {

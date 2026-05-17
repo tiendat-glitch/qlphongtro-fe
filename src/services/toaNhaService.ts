@@ -6,7 +6,6 @@ export const toaNhaService = {
         const data = await apiClient<any[]>('/toa-nha');
         return data.map(item => ({ 
             ...item, 
-            _id: item.id.toString(),
             diaChi: {
                 soNha: item.soNha,
                 duong: item.duong,
@@ -21,7 +20,6 @@ export const toaNhaService = {
         const item = await apiClient<any>(`/toa-nha/${id}`);
         return { 
             ...item, 
-            _id: item.id.toString(),
             diaChi: {
                 soNha: item.soNha,
                 duong: item.duong,
@@ -37,7 +35,7 @@ export const toaNhaService = {
             method: 'POST',
             body: JSON.stringify(data),
         });
-        return { ...res, _id: res.id.toString() } as ToaNha;
+        return res as ToaNha;
     },
 
     update: async (id: number | string, data: Partial<ToaNha>) => {
@@ -45,7 +43,7 @@ export const toaNhaService = {
             method: 'PUT',
             body: JSON.stringify(data),
         });
-        return { ...res, _id: res.id.toString() } as ToaNha;
+        return res as ToaNha;
     },
 
     delete: async (id: number | string) => {

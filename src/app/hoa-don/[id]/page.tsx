@@ -23,21 +23,6 @@ import { hoaDonService } from '@/services/hoaDonService';
 import { thanhToanService } from '@/services/thanhToanService';
 
 // Helper functions
-const getPhongName = (phongId: string | { _id?: string; maPhong: string }) => {
-  if (!phongId) return 'N/A';
-  if (typeof phongId === 'object' && phongId.maPhong) {
-    return phongId.maPhong;
-  }
-  return 'N/A';
-};
-
-const getKhachThueName = (khachThueId: string | { _id?: string; hoTen: string }) => {
-  if (!khachThueId) return 'N/A';
-  if (typeof khachThueId === 'object' && khachThueId.hoTen) {
-    return khachThueId.hoTen;
-  }
-  return 'N/A';
-};
 
 const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('vi-VN', {
@@ -207,7 +192,7 @@ export default function PublicInvoicePage() {
     let tempElement: HTMLDivElement | null = null;
     const phiDichVuList = getSafePhiDichVu(hoaDon.phiDichVu);
     console.debug('[PublicInvoicePage][handleScreenshot] Start export PDF', {
-      invoiceId: hoaDon._id,
+      invoiceId: hoaDon.id,
       maHoaDon: hoaDon.maHoaDon,
       phiDichVuType: typeof hoaDon.phiDichVu,
       phiDichVuIsArray: Array.isArray(hoaDon.phiDichVu),
@@ -237,9 +222,9 @@ export default function PublicInvoicePage() {
           <div style="display: flex; gap: 30px; margin-bottom: 30px;">
             <div style="flex: 1;">
               <h3 style="font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #333;">Thông tin phòng</h3>
-              <p style="margin: 5px 0; font-size: 14px;"><strong>Phòng:</strong> ${getPhongName(hoaDon.phong)}</p>
-              <p style="margin: 5px 0; font-size: 14px;"><strong>Khách thuê:</strong> ${getKhachThueName(hoaDon.khachThue)}</p>
-              <p style="margin: 5px 0; font-size: 14px;"><strong>Hợp đồng:</strong> N/A</p>
+              <p style="margin: 5px 0; font-size: 14px;"><strong>Phòng:</strong> ${hoaDon.maPhong || 'N/A'}</p>
+              <p style="margin: 5px 0; font-size: 14px;"><strong>Khách thuê:</strong> ${hoaDon.tenKhachThue || 'N/A'}</p>
+              <p style="margin: 5px 0; font-size: 14px;"><strong>Hợp đồng:</strong> ${hoaDon.maHopDong || 'N/A'}</p>
             </div>
             <div style="flex: 1;">
               <h3 style="font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #333;">Thông tin thanh toán</h3>
@@ -371,7 +356,7 @@ export default function PublicInvoicePage() {
       toast.success('Đã xuất hóa đơn thành PDF thành công!');
     } catch (error) {
       console.error('Error generating PDF:', error, {
-        invoiceId: hoaDon._id,
+        invoiceId: hoaDon.id,
         maHoaDon: hoaDon.maHoaDon,
         phiDichVuRaw: hoaDon.phiDichVu,
         normalizedPhiDichVuLength: phiDichVuList.length,
@@ -453,9 +438,9 @@ export default function PublicInvoicePage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <h3 className="font-semibold mb-2">Thông tin phòng</h3>
-                    <p><strong>Phòng:</strong> {getPhongName(hoaDon.phong)}</p>
-                    <p><strong>Khách thuê:</strong> {getKhachThueName(hoaDon.khachThue)}</p>
-                    <p><strong>Hợp đồng:</strong> N/A</p>
+                    <p><strong>Phòng:</strong> {hoaDon.maPhong || 'N/A'}</p>
+                    <p><strong>Khách thuê:</strong> {hoaDon.tenKhachThue || 'N/A'}</p>
+                    <p><strong>Hợp đồng:</strong> {hoaDon.maHopDong || 'N/A'}</p>
                   </div>
                   <div>
                     <h3 className="font-semibold mb-2">Thông tin thanh toán</h3>
@@ -636,7 +621,7 @@ export default function PublicInvoicePage() {
                 {thanhToanList.length > 0 ? (
                   <div className="space-y-4">
                     {thanhToanList.map((thanhToan) => (
-                      <div key={thanhToan._id} className="border rounded-lg p-3">
+                      <div key={thanhToan.id} className="border rounded-lg p-3">
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex items-center gap-2">
                             {getMethodBadge(thanhToan.phuongThuc)}

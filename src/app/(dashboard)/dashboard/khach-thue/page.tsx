@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCache } from '@/hooks/use-cache';
+import { usePermissions } from '@/hooks/use-permissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -55,6 +56,7 @@ export default function KhachThuePage() {
     key: CACHE_KEYS.khachThueList,
     duration: 300000
   });
+  const { canDelete } = usePermissions();
   const [khachThueList, setKhachThueList] = useState<KhachThue[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -129,11 +131,11 @@ export default function KhachThuePage() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: string | number) => {
     if (confirm('Bạn có chắc chắn muốn xóa khách thuê này?')) {
       setActionLoading(`delete-${id}`);
       try {
-        await khachThueService.delete(id);
+        await khachThueService.delete(id.toString());
         invalidateEntityCaches('khach-thue');
         await fetchKhachThue(true);
         toast.success('Xóa khách thuê thành công!');
@@ -275,6 +277,7 @@ export default function KhachThuePage() {
             data={filteredKhachThue}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            canDelete={canDelete}
             actionLoading={actionLoading}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
@@ -318,7 +321,7 @@ export default function KhachThuePage() {
         {/* Mobile Card List */}
         <div className="space-y-3">
           {filteredKhachThue.map((khachThue) => (
-            <Card key={khachThue._id} className="p-4">
+            <Card key={khachThue.id} className="p-4">
               <div className="space-y-3">
                 {/* Header with name and status */}
                 <div className="flex justify-between items-start">
@@ -379,21 +382,19 @@ export default function KhachThuePage() {
                 </div>
 
                 {/* Room info if available */}
-                {((khachThue as any).hopDongHienTaiList?.length || (khachThue as any).hopDongHienTai?.phong) && (
+                {(khachThue as any).maPhong && (
                   <div className="border-t pt-2">
-                    {(((khachThue as any).hopDongHienTaiList || ((khachThue as any).hopDongHienTai ? [(khachThue as any).hopDongHienTai] : [])) as any[]).map((hopDong: any) => (
-                      <div key={hopDong._id} className="mb-1 last:mb-0">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Users className="h-3 w-3 text-green-600" />
-                          <span className="font-medium">Phòng: {hopDong.phong?.maPhong}</span>
-                        </div>
-                        {hopDong.phong?.toaNha && (
-                          <div className="flex items-center gap-2 text-xs text-gray-500 ml-5">
-                            <span>{hopDong.phong.toaNha.tenToaNha}</span>
-                          </div>
-                        )}
+                    <div className="mb-1 last:mb-0">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Users className="h-3 w-3 text-green-600" />
+                        <span className="font-medium">Phòng: {(khachThue as any).maPhong}</span>
                       </div>
-                    ))}
+                      {(khachThue as any).tenToaNha && (
+                        <div className="flex items-center gap-2 text-xs text-gray-500 ml-5">
+                          <span>{(khachThue as any).tenToaNha}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -417,20 +418,22 @@ export default function KhachThuePage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleEdit(khachThue)}
-                      disabled={actionLoading === `edit-${khachThue._id}`}
+                      disabled={actionLoading === `edit-${khachThue.id}`}
                     >
                       <Edit className="h-3.5 w-3.5" />
                     </Button>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDelete(khachThue._id!)}
-                    disabled={actionLoading === `delete-${khachThue._id}`}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  {canDelete && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleDelete(khachThue.id!)}
+                      disabled={actionLoading === `delete-${khachThue.id}`}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
                 </div>
               </div>
             </Card>
@@ -471,8 +474,8 @@ function KhachThueForm({
     gioiTinh: khachThue?.gioiTinh || 'nam',
     queQuan: khachThue?.queQuan || '',
     anhCCCD: {
-      matTruoc: khachThue?.anhCCCD?.matTruoc || '',
-      matSau: khachThue?.anhCCCD?.matSau || '',
+      matTruoc: khachThue?.anhCCCD?.matTruoc || (khachThue as any)?.anhCCCD_matTruoc || '',
+      matSau: khachThue?.anhCCCD?.matSau || (khachThue as any)?.anhCCCD_matSau || '',
     },
     ngheNghiep: khachThue?.ngheNghiep || '',
     matKhau: '',
@@ -486,14 +489,20 @@ function KhachThueForm({
     setIsSubmitting(true);
     
     try {
-      const submitData: any = { ...formData };
+      const submitData: any = { 
+        ...formData,
+        anhCCCD_matTruoc: formData.anhCCCD.matTruoc,
+        anhCCCD_matSau: formData.anhCCCD.matSau
+      };
+      delete submitData.anhCCCD;
+      
       if (!submitData.matKhau) {
         delete submitData.matKhau;
       }
 
       let result;
       if (khachThue) {
-        result = await khachThueService.update(khachThue._id as string, submitData);
+        result = await khachThueService.update(khachThue.id as string, submitData);
       } else {
         result = await khachThueService.create(submitData);
       }

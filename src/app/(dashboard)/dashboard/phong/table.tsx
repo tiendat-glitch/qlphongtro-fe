@@ -12,6 +12,11 @@ import {
   type DragEndEvent,
   type UniqueIdentifier,
 } from "@dnd-kit/core"
+
+
+
+
+
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers"
 import {
   arrayMove,
@@ -158,16 +163,15 @@ type PhongTableProps = {
   onDelete: (id: string) => void
   onViewImages?: (phong: Phong) => void
   onViewTenants?: (phong: Phong) => void
+  canDelete?: boolean
 }
 
 const getPhongDndId = (phong: Phong, index: number) =>
-  `${phong._id ?? (phong as any).id ?? 'phong'}-${index}`
+  `${phong.id ?? 'phong'}-${index}`
 
-const getToaNhaName = (toaNha: string | { tenToaNha?: string }, toaNhaList: ToaNha[]) => {
-  if (typeof toaNha === 'object' && toaNha?.tenToaNha) {
-    return toaNha.tenToaNha
-  }
-  const toaNhaObj = toaNhaList.find(t => t._id === toaNha)
+const getToaNhaName = (phong: Phong, toaNhaList: ToaNha[]) => {
+  if (phong.tenToaNha) return phong.tenToaNha;
+  const toaNhaObj = toaNhaList.find(t => t.id === phong.toaNha_id);
   return toaNhaObj?.tenToaNha || 'N/A'
 }
 
@@ -221,7 +225,7 @@ const createColumns = (props: PhongTableProps): ColumnDef<Phong>[] => [
       <div className="flex items-center gap-2">
         <Building2 className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm">
-          {getToaNhaName(row.original.toaNha, props.toaNhaList)}
+          {getToaNhaName(row.original, props.toaNhaList)}
         </span>
       </div>
     ),
@@ -269,10 +273,9 @@ const createColumns = (props: PhongTableProps): ColumnDef<Phong>[] => [
     accessorKey: "nguoiThue",
     header: "Người thuê",
     cell: ({ row }) => {
-      const phong = row.original as any;
-      const hopDong = phong.hopDongHienTai;
+      const phong = row.original;
       
-      if (!hopDong || !hopDong.khachThueId || hopDong.khachThueId.length === 0) {
+      if (!phong.khachThueList || phong.khachThueList.length === 0) {
         return (
           <div className="flex items-center gap-2 text-muted-foreground">
             <User className="h-4 w-4" />
@@ -281,8 +284,7 @@ const createColumns = (props: PhongTableProps): ColumnDef<Phong>[] => [
         );
       }
       
-      const nguoiDaiDien = hopDong.nguoiDaiDien;
-      const soLuongKhachThue = hopDong.khachThueId.length;
+      const soLuongKhachThue = phong.khachThueList.length;
       
       return (
         <div className="min-w-40">
@@ -294,11 +296,11 @@ const createColumns = (props: PhongTableProps): ColumnDef<Phong>[] => [
             )}
             <div>
               <div className="text-sm font-medium">
-                {nguoiDaiDien?.hoTen || 'N/A'}
+                {(phong as any).tenNguoiDaiDien || 'N/A'}
               </div>
-              {nguoiDaiDien?.soDienThoai && (
+              {(phong as any).sdtNguoiDaiDien && (
                 <div className="text-xs text-muted-foreground">
-                  {nguoiDaiDien.soDienThoai}
+                  {(phong as any).sdtNguoiDaiDien}
                 </div>
               )}
             </div>
@@ -372,13 +374,15 @@ const createColumns = (props: PhongTableProps): ColumnDef<Phong>[] => [
             Chỉnh sửa
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            className="text-destructive"
-            onClick={() => props.onDelete(row.original._id!)}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Xóa
-          </DropdownMenuItem>
+          {props.canDelete !== false && (
+            <DropdownMenuItem 
+              className="text-destructive"
+              onClick={() => props.onDelete(row.original.id!.toString())}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Xóa
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     ),
@@ -420,6 +424,7 @@ type PhongDataTableProps = PhongTableProps & {
   selectedTrangThai?: string
   onTrangThaiChange?: (value: string) => void
   allToaNhaList?: ToaNha[]
+  canDelete?: boolean
 }
 
 export function PhongDataTable(props: PhongDataTableProps) {
@@ -517,7 +522,7 @@ export function PhongDataTable(props: PhongDataTableProps) {
             <SelectContent>
               <SelectItem value="all">Tất cả tòa nhà</SelectItem>
               {allToaNhaList?.map((toaNha) => (
-                <SelectItem key={toaNha._id} value={toaNha._id!}>
+                <SelectItem key={toaNha.id} value={toaNha.id?.toString() || ''}>
                   {toaNha.tenToaNha}
                 </SelectItem>
               ))}

@@ -6,19 +6,6 @@ class HoaDon {
     console.log("--- normalizeHoaDon raw row:", JSON.stringify(row, null, 2));
     return {
       ...row,
-      _id: row.id.toString(),
-      phong: {
-        _id: row.phong_id?.toString() || "",
-        maPhong: row.maPhong || "N/A",
-      },
-      khachThue: {
-        _id: row.khachThue_id?.toString() || "",
-        hoTen: row.tenKhachThue || "N/A",
-      },
-      hopDong: {
-        _id: row.hopDong_id?.toString() || "",
-        maHopDong: row.maHopDong || "N/A",
-      },
       phiDichVu: row.phiDichVu
         ? typeof row.phiDichVu === "string"
           ? JSON.parse(row.phiDichVu)

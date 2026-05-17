@@ -50,6 +50,11 @@ exports.createKhachThue = async (req, res) => {
       return errorResponse(res, 400, "Số điện thoại đã tồn tại trong hệ thống");
     }
 
+    const existingEmail = await KhachThue.findByEmail(req.body.email);
+    if (existingEmail) {
+      return errorResponse(res, 400, "Email đã tồn tại trong hệ thống");
+    }
+
     const newId = await KhachThue.create(req.body);
     const newKhach = await KhachThue.findById(newId);
     return successResponse(res, "Tạo khách thuê thành công", newKhach);
@@ -78,6 +83,12 @@ exports.updateKhachThue = async (req, res) => {
         return errorResponse(res, 400, "Số điện thoại mới đã tồn tại");
     }
 
+    if (req.body.email && req.body.email !== khach.email) {
+      const existingEmail = await KhachThue.findByEmail(req.body.email);
+      if (existingEmail)
+        return errorResponse(res, 400, "Email mới đã tồn tại");
+    }
+
     await KhachThue.update(req.params.id, req.body);
     const updatedKhach = await KhachThue.findById(req.params.id);
     return successResponse(res, "Cập nhật khách thuê thành công", updatedKhach);
@@ -92,6 +103,10 @@ exports.deleteKhachThue = async (req, res) => {
     const khach = await KhachThue.findById(req.params.id);
     if (!khach) {
       return errorResponse(res, 404, "Không tìm thấy khách thuê");
+    }
+
+    if (req.user && req.user.vaiTro === "nhanVien") {
+      return errorResponse(res, 403, "Nhân viên không có quyền xóa khách thuê");
     }
 
     await KhachThue.delete(req.params.id);

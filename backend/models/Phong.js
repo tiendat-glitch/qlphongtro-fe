@@ -57,31 +57,13 @@ class Phong {
   static normalizePhong(row) {
     if (!row) return null;
 
-    let hopDongHienTai = null;
-    if (row.hopDong_id) {
-      hopDongHienTai = {
-        _id: row.hopDong_id.toString(),
-        nguoiDaiDien: {
-          _id: row.nguoiDaiDien_id?.toString() || "",
-          hoTen: row.tenNguoiDaiDien || "N/A",
-          soDienThoai: row.sdtNguoiDaiDien || "N/A",
-        },
-        khachThueId: row.khachThueList || [],
-      };
-    }
-
     return {
       ...row,
-      _id: row.id.toString(),
-      toaNha: {
-        _id: row.toaNha_id?.toString() || "",
-        tenToaNha: row.tenToaNha || "N/A",
-      },
       giaThue: Number(row.giaThue || 0),
       tienCoc: Number(row.tienCoc || 0),
       anhPhong: this.parseJsonField(row.anhPhong, []),
       tienNghi: this.parseJsonField(row.tienNghi, []),
-      hopDongHienTai,
+      khachThueList: row.khachThueList || []
     };
   }
 
@@ -90,14 +72,9 @@ class Phong {
 
     return {
       id: row.id,
-      _id: row.id.toString(),
       maPhong: row.maPhong,
       toaNha_id: row.toaNha_id,
       tenToaNha: row.tenToaNha || null,
-      toaNha: {
-        _id: row.toaNha_id?.toString() || "",
-        tenToaNha: row.tenToaNha || "N/A",
-      },
       dienTich: row.dienTich,
       giaThue: Number(row.giaThue || 0),
       tienCoc: Number(row.tienCoc || 0),
@@ -106,6 +83,7 @@ class Phong {
       tienNghi: this.parseJsonField(row.tienNghi, []),
       soNguoiToiDa: row.soNguoiToiDa,
       trangThai: row.trangThai,
+      tang: row.tang,
     };
   }
 
@@ -167,7 +145,7 @@ class Phong {
     let query = `
             SELECT p.id, p.maPhong, p.toaNha_id, t.tenToaNha, p.dienTich,
                    p.giaThue, p.tienCoc, p.moTa, p.anhPhong, p.tienNghi,
-                   p.soNguoiToiDa, p.trangThai
+                   p.soNguoiToiDa, p.trangThai, p.tang
             FROM Phong p
             LEFT JOIN ToaNha t ON p.toaNha_id = t.id
             WHERE 1=1`;
@@ -195,7 +173,7 @@ class Phong {
     const [rows] = await pool.execute(
       `SELECT p.id, p.maPhong, p.toaNha_id, t.tenToaNha, p.dienTich,
                     p.giaThue, p.tienCoc, p.moTa, p.anhPhong, p.tienNghi,
-                    p.soNguoiToiDa, p.trangThai
+                    p.soNguoiToiDa, p.trangThai, p.tang
              FROM Phong p
              LEFT JOIN ToaNha t ON p.toaNha_id = t.id
              WHERE p.id = ? AND p.trangThai IN (?, ?)`,
@@ -209,7 +187,6 @@ class Phong {
     const {
       maPhong,
       toaNha_id,
-      toaNha,
       tang,
       dienTich,
       giaThue,
@@ -220,10 +197,6 @@ class Phong {
       trangThai,
       soNguoiToiDa,
     } = data;
-    const final_toaNha_id =
-      toaNha_id ||
-      (typeof toaNha === "object" ? toaNha.id || toaNha._id : toaNha) ||
-      null;
 
     const [result] = await pool.execute(
       `INSERT INTO Phong
@@ -231,7 +204,7 @@ class Phong {
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         maPhong,
-        final_toaNha_id,
+        toaNha_id,
         tang,
         dienTich,
         giaThue,
@@ -272,10 +245,6 @@ class Phong {
     const values = [];
 
     for (let [key, value] of Object.entries(data)) {
-      if (key === "toaNha") {
-        key = "toaNha_id";
-        value = typeof value === "object" ? value.id || value._id : value;
-      }
 
       if (value !== undefined && validFields.includes(key)) {
         if (key === "toaNha_id" && (value === "" || value === null)) {

@@ -31,7 +31,7 @@ import { ImageCarousel } from '@/components/ui/image-carousel';
 import { phongService } from '@/services/phongService';
 
 type ToaNhaFilterOption = {
-  _id: string;
+  id: string;
   tenToaNha: string;
 };
 
@@ -51,17 +51,15 @@ export default function XemPhongPage() {
     const map = new Map<string, string>();
 
     for (const phong of phongs) {
-      const toaNhaValue = phong.toaNha;
-      if (typeof toaNhaValue === 'object' && toaNhaValue?._id) {
-        map.set(toaNhaValue._id, toaNhaValue.tenToaNha || `Toa nha ${toaNhaValue._id}`);
-      } else if (typeof toaNhaValue === 'string' && toaNhaValue) {
-        if (!map.has(toaNhaValue)) {
-          map.set(toaNhaValue, `Toa nha ${toaNhaValue}`);
-        }
+      if (phong.toaNha_id && phong.tenToaNha) {
+        map.set(phong.toaNha_id.toString(), phong.tenToaNha);
+      } else if (typeof phong.toaNha === 'object' && phong.toaNha && (phong.toaNha as any).id) {
+        const t = phong.toaNha as any;
+        map.set(t.id.toString(), t.tenToaNha || `Toa nha ${t.id}`);
       }
     }
 
-    return Array.from(map.entries()).map(([id, tenToaNha]) => ({ _id: id, tenToaNha }));
+    return Array.from(map.entries()).map(([id, tenToaNha]) => ({ id, tenToaNha }));
   };
 
   useEffect(() => {
@@ -108,7 +106,7 @@ export default function XemPhongPage() {
     fetchPhong();
   }, [selectedToaNha, selectedTrangThai]);
 
-  // Auto-open phong details when phong parameter is in URL
+
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const phongParam = urlParams.get('phong');
@@ -241,7 +239,7 @@ export default function XemPhongPage() {
                   Phòng {selectedPhong.maPhong}
                 </h1>
                 <p className="text-xs md:text-sm text-slate-600">
-                  {typeof selectedPhong.toaNha === 'object' ? (selectedPhong.toaNha as any).tenToaNha : 'N/A'} - Tầng {selectedPhong.tang}
+                  {selectedPhong.tenToaNha || 'N/A'} - Tầng {selectedPhong.tang}
                 </p>
               </div>
               <div className="text-left md:text-right">
@@ -562,7 +560,7 @@ export default function XemPhongPage() {
                           <SelectContent className="border-0 shadow-xl rounded-xl bg-white/95 backdrop-blur-md">
                             <SelectItem value="all" className="text-sm hover:bg-slate-50">Tất cả tòa nhà</SelectItem>
                             {toaNhaList.map((toaNha) => (
-                              <SelectItem key={toaNha._id} value={toaNha._id!} className="text-sm hover:bg-slate-50">
+                              <SelectItem key={toaNha.id} value={toaNha.id!} className="text-sm hover:bg-slate-50">
                                 {toaNha.tenToaNha}
                               </SelectItem>
                             ))}
@@ -688,7 +686,7 @@ export default function XemPhongPage() {
         {/* Room Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
           {filteredPhong.map((phong, index) => (
-            <Card key={`${phong._id ?? (phong as any).id ?? 'phong'}-${index}`} className="group overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer bg-white/90 backdrop-blur-sm hover:scale-[1.02] hover:bg-white/95">
+            <Card key={`${phong.id || 'phong'}-${index}`} className="group overflow-hidden border-0 shadow-lg hover:shadow-2xl transition-all duration-500 cursor-pointer bg-white/90 backdrop-blur-sm hover:scale-[1.02] hover:bg-white/95">
               <div className="aspect-video bg-gradient-to-br from-slate-100 to-slate-200 relative overflow-hidden">
                 {phong.anhPhong && phong.anhPhong.length > 0 ? (
                   <>
@@ -723,7 +721,7 @@ export default function XemPhongPage() {
                 <CardDescription className="flex flex-wrap gap-2 md:gap-4 text-xs md:text-sm">
                   <span className="flex items-center">
                     <MapPin className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />
-                    <span className="truncate">{typeof phong.toaNha === 'object' ? (phong.toaNha as any).tenToaNha : 'N/A'}</span>
+                    <span className="truncate">{phong.tenToaNha || 'N/A'}</span>
                   </span>
                   <span className="flex items-center">
                     <Square className="h-3 w-3 md:h-4 md:w-4 mr-1 flex-shrink-0" />

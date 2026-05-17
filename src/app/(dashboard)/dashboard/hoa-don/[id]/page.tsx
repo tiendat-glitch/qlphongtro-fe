@@ -33,28 +33,16 @@ import { toast } from 'sonner';
 import { invalidateEntityCaches } from '@/lib/cache-invalidation';
 
 // Helper functions
-const getPhongName = (phongId: string | any, phongList: Phong[]) => {
+const getPhongName = (phongId: string | number | any, phongList: Phong[]) => {
   if (!phongId) return 'N/A';
-  if (typeof phongId === 'object' && phongId.maPhong) {
-    return phongId.maPhong;
-  }
-  if (typeof phongId === 'string') {
-    const phong = phongList.find(p => p._id === phongId);
-    return phong?.maPhong || 'N/A';
-  }
-  return 'N/A';
+  const phong = phongList.find(p => p.id?.toString() === phongId.toString());
+  return phong?.maPhong || 'N/A';
 };
 
-const getKhachThueName = (khachThueId: string | any, khachThueList: KhachThue[]) => {
+const getKhachThueName = (khachThueId: string | number | any, khachThueList: KhachThue[]) => {
   if (!khachThueId) return 'N/A';
-  if (typeof khachThueId === 'object' && khachThueId.hoTen) {
-    return khachThueId.hoTen;
-  }
-  if (typeof khachThueId === 'string') {
-    const khachThue = khachThueList.find(k => k._id === khachThueId);
-    return khachThue?.hoTen || 'N/A';
-  }
-  return 'N/A';
+  const khachThue = khachThueList.find(k => k.id?.toString() === khachThueId.toString());
+  return khachThue?.hoTen || 'N/A';
 };
 
 export default function ChinhSuaHoaDonPage() {
@@ -121,9 +109,9 @@ export default function ChinhSuaHoaDonPage() {
         
         setFormData({
           maHoaDon: hoaDonItem.maHoaDon || '',
-          hopDong: typeof hoaDonItem.hopDong === 'object' ? (hoaDonItem.hopDong as {_id: string})?._id || '' : (hoaDonItem.hopDong || hoaDonItem.hopDong_id || ''),
-          phong: typeof hoaDonItem.phong === 'object' ? (hoaDonItem.phong as {_id: string})?._id || '' : (hoaDonItem.phong || hoaDonItem.phong_id || ''),
-          khachThue: typeof hoaDonItem.khachThue === 'object' ? (hoaDonItem.khachThue as {_id: string})?._id || '' : (hoaDonItem.khachThue || hoaDonItem.khachThue_id || ''),
+          hopDong: (hoaDonItem.hopDong_id || '').toString(),
+          phong: (hoaDonItem.phong_id || '').toString(),
+          khachThue: (hoaDonItem.khachThue_id || '').toString(),
           thang: hoaDonItem.thang || new Date().getMonth() + 1,
           nam: hoaDonItem.nam || new Date().getFullYear(),
           tienPhong: hoaDonItem.tienPhong || 0,
@@ -176,7 +164,7 @@ export default function ChinhSuaHoaDonPage() {
     const soNuoc = formData.chiSoNuocCuoiKy - formData.chiSoNuocBanDau;
     
     // Lấy giá điện nước từ hợp đồng
-    const selectedHopDong = hopDongList.find(hd => hd._id === formData.hopDong);
+    const selectedHopDong = hopDongList.find(hd => (hd.id?.toString() === formData.hopDong.toString()) || ((hd as any)._id?.toString() === formData.hopDong.toString()));
     const giaDien = selectedHopDong?.giaDien || 0;
     const giaNuoc = selectedHopDong?.giaNuoc || 0;
     
@@ -204,14 +192,12 @@ export default function ChinhSuaHoaDonPage() {
   // Tự động điền dữ liệu khi chọn hợp đồng
   useEffect(() => {
     if (formData.hopDong && hopDongList.length > 0) {
-      const selectedHopDong = hopDongList.find(hd => hd._id === formData.hopDong);
-      if (selectedHopDong) {
-        console.log('Auto-filling form data from contract (edit):', selectedHopDong);
-        
+      const selectedHopDong = hopDongList.find(hd => hd.id?.toString() === formData.hopDong.toString());
+      if (selectedHopDong) {    
         setFormData(prev => ({
           ...prev,
-          phong: typeof selectedHopDong.phong === 'object' ? selectedHopDong.phong._id : selectedHopDong.phong,
-          khachThue: typeof selectedHopDong.nguoiDaiDien === 'object' ? selectedHopDong.nguoiDaiDien._id : selectedHopDong.nguoiDaiDien,
+          phong: selectedHopDong.phong_id || '',
+          khachThue: selectedHopDong.nguoiDaiDien_id || '',
           tienPhong: selectedHopDong.giaThue,
           phiDichVu: selectedHopDong.phiDichVu || [],
         }));
@@ -382,11 +368,10 @@ export default function ChinhSuaHoaDonPage() {
                           hopDongList
                             .filter(hd => hd.trangThai === 'hoatDong')
                             .map((hopDong) => {
-                              const phongName = typeof hopDong.phong === 'object' && (hopDong.phong as Phong)?.maPhong 
-                                ? (hopDong.phong as Phong).maPhong 
-                                : getPhongName(hopDong.phong as string, phongList);
+                              const phongName = (hopDong as any).maPhong || getPhongName(hopDong.phong_id, phongList);
+                              const keyVal = hopDong.id || '';
                               return (
-                                <SelectItem key={hopDong._id} value={hopDong._id!}>
+                                <SelectItem key={keyVal} value={keyVal.toString()}>
                                   {hopDong.maHopDong} - {phongName}
                                 </SelectItem>
                               );

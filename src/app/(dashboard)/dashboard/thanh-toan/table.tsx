@@ -88,10 +88,8 @@ import {
 } from "@/components/ui/table"
 import type { ThanhToan, HoaDon } from '@/types'
 
-// Type cho ThanhToan đã được populate
-type ThanhToanPopulated = Omit<ThanhToan, 'hoaDon'> & {
-  hoaDon: string | HoaDon
-}
+// Type cho ThanhToan đã được phẳng từ backend
+type ThanhToanPopulated = ThanhToan;
 
 // Helper functions
 const formatCurrency = (amount: number) => {
@@ -157,57 +155,33 @@ type ThanhToanTableProps = {
   onDownload?: (thanhToan: ThanhToanPopulated) => void
 }
 
-const getHoaDonInfo = (hoaDon: string | HoaDon | undefined, hoaDonList: HoaDon[]) => {
-  if (typeof hoaDon === 'object' && hoaDon?.maHoaDon) {
-    return hoaDon.maHoaDon
-  }
-  if (typeof hoaDon === 'string') {
-    const hoaDonItem = hoaDonList.find(h => h._id === hoaDon)
-    return hoaDonItem?.maHoaDon || 'N/A'
-  }
-  return 'N/A'
+const getHoaDonInfo = (thanhToan: ThanhToanPopulated) => {
+  return (thanhToan as any).maHoaDon || 'N/A'
 }
 
 const getHoaDonObject = (hoaDon: string | HoaDon | undefined, hoaDonList: HoaDon[]) => {
   if (typeof hoaDon === 'object' && hoaDon !== null) return hoaDon
-  if (typeof hoaDon === 'string') return hoaDonList.find(h => h._id === hoaDon) || null
+  if (typeof hoaDon === 'string') return hoaDonList.find(h => (h.id?.toString()) === hoaDon) || null
   return null
 }
 
-const getPaymentInvoiceCode = (thanhToan: ThanhToanPopulated, hoaDonList: HoaDon[]) => {
-  if (thanhToan.maHoaDon) return thanhToan.maHoaDon
-  return getHoaDonInfo(thanhToan.hoaDon, hoaDonList)
+const getPaymentInvoiceCode = (thanhToan: ThanhToanPopulated) => {
+  return (thanhToan as any).maHoaDon || 'N/A'
 }
 
-const getPaymentRoomCode = (thanhToan: ThanhToanPopulated, hoaDonList: HoaDon[]) => {
-  if (thanhToan.maPhong) return thanhToan.maPhong
-
-  const hoaDonInfo = getHoaDonObject(thanhToan.hoaDon, hoaDonList) as any
-  if (hoaDonInfo?.maPhong) return hoaDonInfo.maPhong
-  if (typeof hoaDonInfo?.phong === 'object' && hoaDonInfo?.phong?.maPhong) {
-    return hoaDonInfo.phong.maPhong
-  }
-
-  return 'N/A'
+const getPaymentRoomCode = (thanhToan: ThanhToanPopulated) => {
+  return (thanhToan as any).maPhong || 'N/A'
 }
 
-const getPaymentRepresentative = (thanhToan: ThanhToanPopulated, hoaDonList: HoaDon[]) => {
-  if (thanhToan.tenNguoiDaiDien) return thanhToan.tenNguoiDaiDien
-  if (thanhToan.hoTen) return thanhToan.hoTen
-
-  const hoaDonInfo = getHoaDonObject(thanhToan.hoaDon, hoaDonList) as any
-  if (typeof hoaDonInfo?.khachThue === 'object' && hoaDonInfo?.khachThue?.hoTen) {
-    return hoaDonInfo.khachThue.hoTen
-  }
-
-  return 'N/A'
+const getPaymentRepresentative = (thanhToan: ThanhToanPopulated) => {
+  return (thanhToan as any).tenNguoiDaiDien || (thanhToan as any).hoTen || 'N/A'
 }
 
 const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated>[] => [
   {
     id: "drag",
     header: () => null,
-    cell: ({ row }) => <DragHandle id={row.original._id!} />,
+    cell: ({ row }) => <DragHandle id={row.original.id!.toString()} />,
     enableHiding: false,
   },
   {
@@ -240,18 +214,17 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
     accessorKey: "hoaDon",
     header: "Hóa đơn",
     cell: ({ row }) => {
-      const hoaDonInfo = getHoaDonObject(row.original.hoaDon, props.hoaDonList);
       return (
         <div className="min-w-32">
           <div className="flex items-center gap-2">
             <Receipt className="h-4 w-4 text-muted-foreground" />
             <span className="font-medium">
-              {getPaymentInvoiceCode(row.original, props.hoaDonList)}
+              {getPaymentInvoiceCode(row.original)}
             </span>
           </div>
-          {hoaDonInfo && (
+          {(row.original as any).thang && (
             <div className="text-xs text-muted-foreground mt-1 ml-6">
-              Tháng {hoaDonInfo.thang}/{hoaDonInfo.nam}
+              Tháng {(row.original as any).thang}/{(row.original as any).nam}
             </div>
           )}
         </div>
@@ -266,7 +239,7 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
       <div className="flex items-center gap-2 min-w-24">
         <Home className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm">
-          {getPaymentRoomCode(row.original, props.hoaDonList)}
+          {getPaymentRoomCode(row.original)}
         </span>
       </div>
     ),
@@ -278,7 +251,7 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
       <div className="flex items-center gap-2 min-w-32">
         <Users className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm">
-          {getPaymentRepresentative(row.original, props.hoaDonList)}
+          {getPaymentRepresentative(row.original)}
         </span>
       </div>
     ),
@@ -350,16 +323,17 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
-          {props.onView && (
+          {props.onView ? (
             <DropdownMenuItem onClick={() => props.onView!(row.original)}>
               <Eye className="mr-2 h-4 w-4" />
               Xem chi tiết
             </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem onClick={() => toast.info('Không thể sửa thanh toán đã tạo. Vui lòng xóa và thêm lại.')}>
+              <Eye className="mr-2 h-4 w-4" />
+              Xem chi tiết
+            </DropdownMenuItem>
           )}
-          <DropdownMenuItem onClick={() => toast.info('Không thể sửa thanh toán đã tạo. Vui lòng xóa và thêm lại.')}>
-            <Eye className="mr-2 h-4 w-4" />
-            Xem chi tiết
-          </DropdownMenuItem>
           {row.original.anhBienLai && props.onDownload && (
             <DropdownMenuItem onClick={() => props.onDownload!(row.original)}>
               <Download className="mr-2 h-4 w-4" />
@@ -369,7 +343,7 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
           <DropdownMenuSeparator />
           <DropdownMenuItem 
             className="text-destructive"
-            onClick={() => props.onDelete(row.original._id!)}
+            onClick={() => props.onDelete(row.original.id!.toString())}
           >
             <Trash2 className="mr-2 h-4 w-4" />
             Xóa
@@ -383,7 +357,7 @@ const createColumns = (props: ThanhToanTableProps): ColumnDef<ThanhToanPopulated
 
 function DraggableRow({ row }: { row: Row<ThanhToanPopulated> }) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
-    id: row.original._id!,
+    id: row.original.id!.toString(),
   })
 
   return (
@@ -446,7 +420,7 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
   )
 
   const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => data?.map(({ _id }) => _id!) || [],
+    () => data?.map(({ id }) => id!.toString()) || [],
     [data]
   )
 
@@ -460,7 +434,7 @@ export function ThanhToanDataTable(props: ThanhToanDataTableProps) {
       columnFilters,
       pagination,
     },
-    getRowId: (row) => row._id!,
+    getRowId: (row) => row.id!.toString(),
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { useCache } from '@/hooks/use-cache';
+import { usePermissions } from '@/hooks/use-permissions';
 import { toaNhaService } from '@/services/toaNhaService';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -33,18 +34,21 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { 
-  Plus, 
-  Search, 
-  Edit, 
-  Trash2, 
-  Building2, 
-  MapPin,
-  Users,
-  Eye,
-  RefreshCw,
-  Copy
-} from 'lucide-react';
+import { Copy, Edit, Building2, MapPin, Search, Plus, MoreVertical, Trash2, RefreshCw, Eye, Users } from "lucide-react";
+
+const tienNghiMap: Record<string, string> = {
+  'wifi': 'WiFi',
+  'camera': 'Camera an ninh',
+  'hamDeXe': 'Hầm để xe',
+  'baoVe': 'Bảo vệ',
+  'giuXe': 'Giữ xe',
+  'thangMay': 'Thang máy',
+  'sanPhoi': 'Sân phơi',
+  'nhaVeSinhChung': 'WC chung',
+  'khuBepChung': 'Bếp chung',
+  'gioTuDo': 'Giờ giấc tự do',
+  'khongChungChu': 'Không chung chủ',
+};
 import { ToaNha } from '@/types';
 import { DeleteConfirmPopover } from '@/components/ui/delete-confirm-popover';
 import { toast } from 'sonner';
@@ -52,6 +56,7 @@ import { ToaNhaDataTable } from './table';
 
 export default function ToaNhaPage() {
   const cache = useCache<{ toaNhaList: ToaNha[] }>({ key: 'toa-nha-data', duration: 300000 });
+  const { canDelete } = usePermissions();
   const [toaNhaList, setToaNhaList] = useState<ToaNha[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -111,7 +116,7 @@ export default function ToaNhaPage() {
     try {
       await toaNhaService.delete(id);
       cache.clearCache();
-      setToaNhaList(prev => prev.filter(toaNha => toaNha._id !== id));
+      setToaNhaList(prev => prev.filter(toaNha => (toaNha.id?.toString()) !== id));
       toast.success('Xóa tòa nhà thành công!');
     } catch (error: any) {
       console.error('Error deleting toa nha:', error);
@@ -248,6 +253,7 @@ export default function ToaNhaPage() {
             data={filteredToaNha}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            canDelete={canDelete}
             searchTerm={searchTerm}
             onSearchChange={setSearchTerm}
           />
@@ -288,7 +294,7 @@ export default function ToaNhaPage() {
               const tongPhong = toaNha.tongSoPhong;
               
               return (
-                <Card key={toaNha._id} className="hover:shadow-md transition-shadow">
+                <Card key={toaNha.id} className="hover:shadow-md transition-shadow">
                   <CardContent className="p-3">
                     <div className="flex justify-between items-start mb-2">
                       <div className="flex-1">
@@ -324,7 +330,7 @@ export default function ToaNhaPage() {
                         <div className="flex flex-wrap gap-1">
                           {toaNha.tienNghiChung.slice(0, 3).map((tienNghi) => (
                             <Badge key={tienNghi} variant="secondary" className="text-xs">
-                              {tienNghi}
+                              {tienNghiMap[tienNghi] || tienNghi}
                             </Badge>
                           ))}
                           {toaNha.tienNghiChung.length > 3 && (
@@ -360,12 +366,14 @@ export default function ToaNhaPage() {
                           <Edit className="h-3.5 w-3.5 mr-1" />
                           Sửa
                         </Button>
-                        <DeleteConfirmPopover
-                          onConfirm={() => handleDelete(toaNha._id!)}
-                          title="Xóa tòa nhà"
-                          description="Bạn có chắc chắn muốn xóa tòa nhà này?"
-                          className="text-black hover:text-red-700 hover:bg-red-50"
-                        />
+                        {canDelete && (
+                          <DeleteConfirmPopover
+                            onConfirm={() => handleDelete((toaNha.id?.toString())!)}
+                            title="Xóa tòa nhà"
+                            description="Bạn có chắc chắn muốn xóa tòa nhà này?"
+                            className="text-black hover:text-red-700 hover:bg-red-50"
+                          />
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -403,12 +411,15 @@ function ToaNhaForm({
   const tienNghiOptions = [
     { value: 'wifi', label: 'WiFi' },
     { value: 'camera', label: 'Camera an ninh' },
-    { value: 'baoVe', label: 'Bảo vệ 24/7' },
+    { value: 'hamDeXe', label: 'Hầm để xe' },
+    { value: 'baoVe', label: 'Bảo vệ' },
     { value: 'giuXe', label: 'Giữ xe' },
     { value: 'thangMay', label: 'Thang máy' },
     { value: 'sanPhoi', label: 'Sân phơi' },
     { value: 'nhaVeSinhChung', label: 'Nhà vệ sinh chung' },
     { value: 'khuBepChung', label: 'Khu bếp chung' },
+    { value: 'gioTuDo', label: 'Giờ giấc tự do' },
+    { value: 'khongChungChu', label: 'Không chung chủ' },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -417,19 +428,17 @@ function ToaNhaForm({
     try {
       const submitData = {
         tenToaNha: formData.tenToaNha,
-        diaChi: {
-          soNha: formData.soNha,
-          duong: formData.duong,
-          phuong: formData.phuong,
-          quan: formData.quan,
-          thanhPho: formData.thanhPho,
-        },
+        soNha: formData.soNha,
+        duong: formData.duong,
+        phuong: formData.phuong,
+        quan: formData.quan,
+        thanhPho: formData.thanhPho,
         moTa: formData.moTa,
         tienNghiChung: formData.tienNghiChung,
       };
 
       if (toaNha) {
-        await toaNhaService.update(toaNha._id as string, submitData);
+        await toaNhaService.update((toaNha.id) as string, submitData);
       } else {
         await toaNhaService.create(submitData);
       }

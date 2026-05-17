@@ -3,13 +3,12 @@ import { NextResponse } from 'next/server';
 
 export default withAuth(
   function middleware(req) {
-    // Add any additional middleware logic here
     return NextResponse.next();
   },
   {
     callbacks: {
       authorized: ({ token, req }) => {
-        // Protect dashboard routes
+        // bao ve dashboard
         if (req.nextUrl.pathname.startsWith('/dashboard')) {
           return !!token;
         }

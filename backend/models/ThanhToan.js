@@ -4,14 +4,7 @@ class ThanhToan {
     static normalizeThanhToan(row) {
         if (!row) return null;
         return {
-            ...row,
-            _id: row.id?.toString(),
-            hoaDon: row.hoaDon_id ? {
-                _id: row.hoaDon_id.toString(),
-                maHoaDon: row.maHoaDon || '',
-                phong: { maPhong: row.maPhong || '' },
-                khachThue: { hoTen: row.hoTen || row.tenNguoiDaiDien || '' }
-            } : null
+            ...row
         };
     }
 

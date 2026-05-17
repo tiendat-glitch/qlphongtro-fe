@@ -9,12 +9,12 @@ export const khachThueService = {
             if (query) queryStr = `?${query}`;
         }
         const data = await apiClient<any[]>('/khach-thue' + queryStr);
-        return data.map(item => ({ ...item, _id: item.id.toString() })) as KhachThue[];
+        return data as KhachThue[];
     },
 
     getById: async (id: number | string) => {
         const data = await apiClient<any>(`/khach-thue/${id}`);
-        return { ...data, _id: data.id.toString() } as KhachThue;
+        return data as KhachThue;
     },
 
     create: async (data: Partial<KhachThue>) => {
@@ -22,7 +22,7 @@ export const khachThueService = {
             method: 'POST',
             body: JSON.stringify(data),
         });
-        return { ...res, _id: res.id.toString() } as KhachThue;
+        return res as KhachThue;
     },
 
     update: async (id: number | string, data: Partial<KhachThue>) => {
@@ -30,7 +30,7 @@ export const khachThueService = {
             method: 'PUT',
             body: JSON.stringify(data),
         });
-        return { ...res, _id: res.id.toString() } as KhachThue;
+        return res as KhachThue;
     },
 
     delete: async (id: number | string) => {
@@ -51,6 +51,16 @@ export const khachThueService = {
             headers: {
                 Authorization: `Bearer ${token}`
             }
+        });
+    },
+
+    updateMe: async (token: string, data: Partial<KhachThue>) => {
+        return apiClient<any>('/auth/khach-thue/me', {
+            method: 'PUT',
+            headers: {
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify(data),
         });
     }
 };

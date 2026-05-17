@@ -376,6 +376,10 @@ exports.deleteHopDong = async (req, res) => {
       return errorResponse(res, 404, "Không tìm thấy hợp đồng");
     }
 
+    if (req.user && req.user.vaiTro === "nhanVien") {
+      return errorResponse(res, 403, "Nhân viên không có quyền xóa hợp đồng");
+    }
+
     await HopDong.delete(req.params.id);
     return successResponse(res, "Xóa hợp đồng thành công");
   } catch (error) {

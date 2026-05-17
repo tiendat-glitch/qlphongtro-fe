@@ -51,7 +51,7 @@ import { UserDataTable } from './table';
 import { userService } from '@/services/userService';
 
 interface User {
-  _id: string;
+  id: string | number;
   name?: string;
   ten?: string;
   email: string;
@@ -167,7 +167,7 @@ export default function AccountManagementPage() {
     if (!selectedUser) return;
 
     try {
-      await userService.adminUpdateUser(selectedUser._id, editUserData);
+      await userService.adminUpdateUser(selectedUser.id, editUserData);
       toast.success('Cập nhật tài khoản thành công');
       setIsEditDialogOpen(false);
       setSelectedUser(null);
@@ -179,7 +179,7 @@ export default function AccountManagementPage() {
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
+  const handleDeleteUser = async (userId: string | number) => {
     if (!confirm('Bạn có chắc chắn muốn xóa tài khoản này?')) return;
 
     try {
@@ -461,10 +461,10 @@ export default function AccountManagementPage() {
         {/* Mobile Card List */}
         <div className="space-y-3">
           {filteredUsers.map((user) => {
-            const isCurrentUser = session?.user?.id === user._id;
+            const isCurrentUser = session?.user?.id === user.id;
             
             return (
-              <Card key={user._id} className="p-4">
+              <Card key={user.id} className="p-4">
                 <div className="space-y-3">
                   {/* Header with avatar and info */}
                   <div className="flex items-start gap-3">
@@ -524,7 +524,7 @@ export default function AccountManagementPage() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDeleteUser(user._id)}
+                        onClick={() => handleDeleteUser(user.id)}
                         className="flex-1 text-red-600 hover:bg-red-50"
                       >
                         <Trash2 className="h-3.5 w-3.5 mr-1" />

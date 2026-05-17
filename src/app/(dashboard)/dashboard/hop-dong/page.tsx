@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useCache } from "@/hooks/use-cache";
+import { usePermissions } from "@/hooks/use-permissions";
 import {
   Card,
   CardContent,
@@ -82,6 +83,7 @@ export default function HopDongPage() {
     key: CACHE_KEYS.toaNhaList,
     duration: 300000,
   });
+  const { canDelete } = usePermissions();
 
   const [hopDongList, setHopDongList] = useState<HopDong[]>([]);
   const [phongList, setPhongList] = useState<Phong[]>([]);
@@ -166,17 +168,7 @@ export default function HopDongPage() {
     // Filter by toa nha
     let matchesToaNha = true;
     if (toaNhaFilter !== "all") {
-      if (
-        typeof hopDong.phong === "object" &&
-        (hopDong.phong as { toaNha: { _id: string } })?.toaNha
-      ) {
-        matchesToaNha =
-          (hopDong.phong as { toaNha: { _id: string } }).toaNha._id ===
-          toaNhaFilter;
-      } else {
-        const phong = phongList.find((p) => p._id === hopDong.phong);
-        matchesToaNha = phong?.toaNha === toaNhaFilter;
-      }
+      matchesToaNha = (hopDong as any).toaNha_id?.toString() === toaNhaFilter;
     }
 
     return matchesSearch && matchesStatus && matchesToaNha;
@@ -195,20 +187,12 @@ export default function HopDongPage() {
     }
   };
 
-  const getPhongName = (phong: string | { maPhong: string }) => {
-    if (typeof phong === "object" && phong?.maPhong) {
-      return phong.maPhong;
-    }
-    const phongObj = phongList.find((p) => p._id === phong);
-    return phongObj?.maPhong || "Không xác định";
+  const getPhongName = (hopDong: HopDong) => {
+    return (hopDong as any).maPhong || "Không xác định";
   };
 
-  const getToaNhaName = (toaNha: string | { tenToaNha: string }) => {
-    if (typeof toaNha === "object" && toaNha?.tenToaNha) {
-      return toaNha.tenToaNha;
-    }
-    const toaNhaObj = toaNhaList.find((t) => t._id === toaNha);
-    return toaNhaObj?.tenToaNha || "Không xác định";
+  const getToaNhaName = (hopDong: HopDong) => {
+    return (hopDong as any).tenToaNha || "Không xác định";
   };
 
   const getPhongInfo = (
@@ -226,14 +210,14 @@ export default function HopDongPage() {
       };
     }
 
-    const phongObj = phongList.find((p) => p._id === phong);
+    const phongObj = phongList.find((p) => p.id === Number(phong) || p.id === phong);
     if (!phongObj)
       return { maPhong: "Không xác định", toaNha: "Không xác định" };
 
     const toaNha =
       typeof phongObj.toaNha === "object"
-        ? phongObj.toaNha?.tenToaNha
-        : toaNhaList.find((t) => t._id === phongObj.toaNha)?.tenToaNha;
+        ? (phongObj.toaNha as any)?.tenToaNha
+        : toaNhaList.find((t) => t.id === (phongObj as any).toaNha_id)?.tenToaNha;
 
     return {
       maPhong: phongObj.maPhong,
@@ -241,12 +225,10 @@ export default function HopDongPage() {
     };
   };
 
-  const getKhachThueName = (khachThue: string | { hoTen: string }) => {
-    if (typeof khachThue === "object" && khachThue?.hoTen) {
-      return khachThue.hoTen;
-    }
-    const khachThueObj = khachThueList.find((k) => k._id === khachThue);
-    return khachThueObj?.hoTen || "Không xác định";
+  const getKhachThueName = (data: any) => {
+    if (!data) return "Không xác định";
+    if (typeof data === "string") return data;
+    return data.tenKhachThue || data.hoTen || data.tenNguoiDaiDien || "Không xác định";
   };
 
   const formatCurrency = (amount: number) => {
@@ -274,7 +256,6 @@ export default function HopDongPage() {
     if (value === null || value === undefined) return "";
     if (typeof value === "object") {
       const obj = value as Record<string, unknown>;
-      if (obj._id !== undefined && obj._id !== null) return String(obj._id);
       if (obj.id !== undefined && obj.id !== null) return String(obj.id);
       return "";
     }
@@ -315,47 +296,18 @@ export default function HopDongPage() {
     bat: "Bát",
   };
 
-  const getPhongObjectForContract = (phong: HopDong["phong"]) => {
-    if (typeof phong === "object" && phong) {
-      const phongObject = phong as Phong;
-      const phongId = toComparableId(
-        (phong as { _id?: unknown; id?: unknown })._id ??
-          (phong as { id?: unknown }).id,
-      );
-      if (!phongId) return phongObject;
-      return (
-        phongList.find((p) => toComparableId(p._id) === phongId) || phongObject
-      );
-    }
-
-    const phongId = toComparableId(phong);
-    return phongList.find((p) => toComparableId(p._id) === phongId) || null;
+  const getPhongObjectForContract = (hopDong: HopDong) => {
+    const phongId = toComparableId(hopDong.phong_id);
+    return phongList.find((p) => toComparableId(p.id) === phongId) || null;
   };
 
-  const getToaNhaObjectForContract = (phong: HopDong["phong"]) => {
-    const phongObject = getPhongObjectForContract(phong) as
-      | (Phong & { toaNha?: unknown })
-      | null;
-    const toaNhaSource = phongObject?.toaNha;
-    if (!toaNhaSource) return null;
-
-    if (typeof toaNhaSource === "object") {
-      const toaNhaObj = toaNhaSource as ToaNha & { id?: unknown };
-      const toaNhaId = toComparableId(
-        (toaNhaObj as { _id?: unknown })._id ?? toaNhaObj.id,
-      );
-      if (!toaNhaId) return toaNhaObj;
-      return (
-        toaNhaList.find((t) => toComparableId(t._id) === toaNhaId) || toaNhaObj
-      );
-    }
-
-    const toaNhaId = toComparableId(toaNhaSource);
-    return toaNhaList.find((t) => toComparableId(t._id) === toaNhaId) || null;
+  const getToaNhaObjectForContract = (hopDong: HopDong) => {
+    const toaNhaId = toComparableId((hopDong as any).toaNha_id);
+    return toaNhaList.find((t) => toComparableId(t.id) === toaNhaId) || null;
   };
 
   const getBenAInfoForContract = (hopDong: HopDong) => {
-    const toaNhaObj = getToaNhaObjectForContract(hopDong.phong) as
+    const toaNhaObj = getToaNhaObjectForContract(hopDong) as
       | (ToaNha & Record<string, unknown>)
       | null;
     const chuSoHuuRaw = toaNhaObj?.chuSoHuu;
@@ -408,16 +360,16 @@ export default function HopDongPage() {
   };
 
   const handleEdit = (hopDong: HopDong) => {
-    router.push(`/dashboard/hop-dong/${hopDong._id}`);
+    router.push(`/dashboard/hop-dong/${hopDong.id}`);
   };
 
   const handleView = async (hopDong: HopDong) => {
     try {
-      if (!hopDong._id) {
+      if (!hopDong.id) {
         setViewingHopDong(hopDong);
         return;
       }
-      const latestHopDong = await hopDongService.getById(hopDong._id);
+      const latestHopDong = await hopDongService.getById(hopDong.id);
       setViewingHopDong(latestHopDong);
     } catch (error) {
       console.error("Error fetching hop dong detail:", error);
@@ -431,7 +383,7 @@ export default function HopDongPage() {
 
       invalidateEntityCaches("hop-dong");
       await fetchData(true);
-      if (viewingHopDong?._id === id) {
+      if (viewingHopDong?.id === id) {
         setViewingHopDong(null);
       }
       toast.success("Đã xóa hợp đồng thành công");
@@ -444,35 +396,28 @@ export default function HopDongPage() {
   const handleDownload = async (initialHopDong: HopDong) => {
     try {
       let hopDong = initialHopDong;
-      if (initialHopDong._id) {
-        hopDong = await hopDongService.getById(initialHopDong._id);
+      if (initialHopDong.id) {
+        hopDong = await hopDongService.getById(initialHopDong.id);
       }
-      if (viewingHopDong?._id === hopDong._id) {
+      if (viewingHopDong?.id === hopDong.id) {
         setViewingHopDong(hopDong);
       }
 
       // Generate contract content
-      const phongInfo = getPhongInfo(hopDong.phong);
-      const nguoiDaiDien = getKhachThueName(hopDong.nguoiDaiDien);
+      const maPhong = (hopDong as any).maPhong || "N/A";
+      const tenToaNha = (hopDong as any).tenToaNha || "N/A";
+      const tenKhachThue = (hopDong as any).tenKhachThue || "N/A";
 
       // Lấy thông tin chi tiết của người đại diện
       const nguoiDaiDienObj = khachThueList.find((kt) => {
-        const ktId =
-          typeof kt._id === "object" ? (kt._id as { _id: string })._id : kt._id;
-        const daiDienId =
-          typeof hopDong.nguoiDaiDien === "object"
-            ? (hopDong.nguoiDaiDien as { _id: string })._id
-            : hopDong.nguoiDaiDien;
-        return ktId === daiDienId;
+        return toComparableId(kt.id) === toComparableId(hopDong.nguoiDaiDien_id);
       });
       const nguoiDaiDienInfo = (nguoiDaiDienObj || {}) as Record<
         string,
         unknown
       >;
       const benAInfo = getBenAInfoForContract(hopDong);
-      const phongObj = getPhongObjectForContract(hopDong.phong) as
-        | (Phong & { tienNghi?: unknown })
-        | null;
+      const phongObj = getPhongObjectForContract(hopDong);
       const tienNghiBanGiao = Array.isArray(phongObj?.tienNghi)
         ? Array.from(
             new Set(
@@ -558,7 +503,7 @@ export default function HopDongPage() {
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: `Tại địa chỉ: ${phongInfo.toaNha}`,
+                    text: `Tại địa chỉ: ${tenToaNha}`,
                     size: 20,
                   }),
                 ],
@@ -636,7 +581,7 @@ export default function HopDongPage() {
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: `Ông/bà: ${safeDisplay(nguoiDaiDienObj?.hoTen || nguoiDaiDien)} Sinh ngày: ${formatDateValue(nguoiDaiDienObj?.ngaySinh)}`,
+                    text: `Ông/bà: ${safeDisplay(nguoiDaiDienObj?.hoTen || tenKhachThue)} Sinh ngày: ${formatDateValue(nguoiDaiDienObj?.ngaySinh)}`,
                     size: 20,
                   }),
                 ],
@@ -683,7 +628,7 @@ export default function HopDongPage() {
               new Paragraph({
                 children: [
                   new TextRun({
-                    text: `Bên A đồng ý cho bên B thuê 01 phòng ở tại địa chỉ: ${phongInfo.maPhong} - ${phongInfo.toaNha}`,
+                    text: `Bên A đồng ý cho bên B thuê 01 phòng ở tại địa chỉ: ${maPhong} - ${tenToaNha}`,
                     size: 20,
                   }),
                 ],
@@ -1068,16 +1013,16 @@ export default function HopDongPage() {
   const handleGiaHan = async (hopDong: HopDong) => {
     const newEndDate = prompt("Nhập ngày kết thúc mới (YYYY-MM-DD):");
     if (newEndDate) {
-      setActionLoading(`giahan-${hopDong._id}`);
+      setActionLoading(`giahan-${hopDong.id}`);
       try {
-        await hopDongService.update(hopDong._id!, {
+        await hopDongService.update(hopDong.id!, {
           ngayKetThuc: new Date(newEndDate),
         });
 
         invalidateEntityCaches("hop-dong");
         await fetchData(true);
-        if (viewingHopDong?._id === hopDong._id) {
-          const latestHopDong = await hopDongService.getById(hopDong._id!);
+        if (viewingHopDong?.id === hopDong.id) {
+          const latestHopDong = await hopDongService.getById(hopDong.id!);
           setViewingHopDong(latestHopDong);
         }
         toast.success("Đã gia hạn hợp đồng thành công");
@@ -1092,16 +1037,16 @@ export default function HopDongPage() {
 
   const handleHuy = async (hopDong: HopDong) => {
     if (confirm("Bạn có chắc chắn muốn hủy hợp đồng này?")) {
-      setActionLoading(`huy-${hopDong._id}`);
+      setActionLoading(`huy-${hopDong.id}`);
       try {
-        await hopDongService.update(hopDong._id!, {
+        await hopDongService.update(hopDong.id!, {
           trangThai: "daHuy",
         });
 
         invalidateEntityCaches("hop-dong");
         await fetchData(true);
-        if (viewingHopDong?._id === hopDong._id) {
-          const latestHopDong = await hopDongService.getById(hopDong._id!);
+        if (viewingHopDong?.id === hopDong.id) {
+          const latestHopDong = await hopDongService.getById(hopDong.id!);
           setViewingHopDong(latestHopDong);
         }
         toast.success("Đã hủy hợp đồng thành công");
@@ -1245,11 +1190,11 @@ export default function HopDongPage() {
                     {viewingHopDong.khachThueId.map((khachThue, index) => {
                       const khachThueId =
                         typeof khachThue === "object"
-                          ? (khachThue as { _id: string })._id
+                          ? (khachThue as { id: string }).id
                           : khachThue;
                       const nguoiDaiDienId =
                         typeof viewingHopDong.nguoiDaiDien === "object"
-                          ? (viewingHopDong.nguoiDaiDien as { _id: string })._id
+                          ? (viewingHopDong.nguoiDaiDien as { id: string }).id
                           : viewingHopDong.nguoiDaiDien;
                       return (
                         <div
@@ -1538,6 +1483,7 @@ export default function HopDongPage() {
             toaNhaFilter={toaNhaFilter}
             onToaNhaChange={setToaNhaFilter}
             allToaNhaList={toaNhaList}
+            canDelete={canDelete}
           />
         </CardContent>
       </Card>
@@ -1592,8 +1538,8 @@ export default function HopDongPage() {
                 </SelectItem>
                 {toaNhaList.map((toaNha) => (
                   <SelectItem
-                    key={toaNha._id}
-                    value={toaNha._id!}
+                    key={toaNha.id}
+                    value={toaNha.id!}
                     className="text-sm"
                   >
                     {toaNha.tenToaNha}
@@ -1607,13 +1553,13 @@ export default function HopDongPage() {
         {/* Mobile Card List */}
         <div className="space-y-3">
           {filteredHopDong.map((hopDong) => {
-            const phongInfo = getPhongInfo(hopDong.phong);
-            const nguoiDaiDien = getKhachThueName(hopDong.nguoiDaiDien);
+            const phongInfo = getPhongInfo(hopDong.phong_id);
+            const nguoiDaiDien = getKhachThueName(hopDong.tenNguoiDaiDien);
             const isExpiring = isExpiringSoon(hopDong.ngayKetThuc);
             const isExpiredNow = isExpired(hopDong.ngayKetThuc);
 
             return (
-              <Card key={hopDong._id} className="p-4">
+              <Card key={hopDong.id} className="p-4">
                 <div className="space-y-3">
                   {/* Header with contract code and status */}
                   <div className="flex justify-between items-start">

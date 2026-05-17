@@ -6,86 +6,62 @@ class KhachThue {
     if (!row) return null;
     return {
       ...row,
-      _id: row.id.toString(),
-      anhCCCD: {
-        matTruoc: row.anhCCCD_matTruoc || "",
-        matSau: row.anhCCCD_matSau || "",
-      },
-      hopDongHienTai: row.hopDongHienTai || null,
-      hopDongHienTaiList: row.hopDongHienTaiList || [],
+      anhCCCD_matTruoc: row.anhCCCD_matTruoc || "",
+      anhCCCD_matSau: row.anhCCCD_matSau || "",
     };
   }
 
-  static async hydrateCurrentContracts(rows) {
-    if (!rows?.length) {
-      return rows;
-    }
-
-    const tenantIds = rows.map((row) => row.id);
-    const placeholders = tenantIds.map(() => "?").join(", ");
-    const [contractRows] = await pool.execute(
-      `SELECT hkt.khachThue_id, h.id as hopDong_id, h.maHopDong,
-                    p.id as phong_id, p.maPhong,
-                    t.id as toaNha_id, t.tenToaNha
-             FROM HopDong_KhachThue hkt
-             INNER JOIN HopDong h ON h.id = hkt.hopDong_id
-             INNER JOIN Phong p ON p.id = h.phong_id
-             LEFT JOIN ToaNha t ON t.id = p.toaNha_id
-             WHERE hkt.khachThue_id IN (${placeholders})
-               AND h.trangThai = 'hoatDong'
-             ORDER BY h.ngayBatDau DESC, h.id DESC`,
-      tenantIds,
-    );
-
-    const contractMap = contractRows.reduce((acc, row) => {
-      const key = row.khachThue_id.toString();
-      if (!acc[key]) {
-        acc[key] = [];
-      }
-      acc[key].push({
-        _id: row.hopDong_id.toString(),
-        maHopDong: row.maHopDong,
-        phong: {
-          _id: row.phong_id.toString(),
-          maPhong: row.maPhong || "N/A",
-          toaNha: {
-            _id: row.toaNha_id?.toString() || "",
-            tenToaNha: row.tenToaNha || "N/A",
-          },
-        },
-      });
-      return acc;
-    }, {});
-
-    for (const row of rows) {
-      const contracts = contractMap[row.id.toString()] || [];
-      row.hopDongHienTaiList = contracts;
-      row.hopDongHienTai = contracts[0] || null;
-    }
-
-    return rows;
-  }
-
   static async findAll(filters) {
-    let query = "SELECT * FROM KhachThue WHERE 1=1";
+    let query = `
+      SELECT kt.*, 
+             h.id as hopDong_id, h.maHopDong,
+             p.id as phong_id, p.maPhong,
+             t.id as toaNha_id, t.tenToaNha
+      FROM KhachThue kt
+      LEFT JOIN HopDong_KhachThue hkt ON kt.id = hkt.khachThue_id
+      LEFT JOIN HopDong h ON h.id = hkt.hopDong_id AND h.trangThai = 'hoatDong'
+      LEFT JOIN Phong p ON p.id = h.phong_id
+      LEFT JOIN ToaNha t ON t.id = p.toaNha_id
+      WHERE 1=1
+    `;
     const params = [];
 
     if (filters?.trangThai) {
-      query += " AND trangThai = ?";
+      query += " AND kt.trangThai = ?";
       params.push(filters.trangThai);
     }
 
-    query += " ORDER BY ngayCapNhat DESC";
+    query += " ORDER BY kt.ngayCapNhat DESC";
     const [rows] = await pool.execute(query, params);
-    await this.hydrateCurrentContracts(rows);
-    return rows.map((row) => this.normalizeKhachThue(row));
+    
+    // De-duplicate in JS to avoid SQL GROUP BY errors and prevent React unique key warnings
+    const uniqueTenants = [];
+    const seenIds = new Set();
+    
+    for (const row of rows) {
+      if (!seenIds.has(row.id)) {
+        seenIds.add(row.id);
+        uniqueTenants.push(this.normalizeKhachThue(row));
+      }
+    }
+    
+    return uniqueTenants;
   }
 
   static async findById(id) {
-    const [rows] = await pool.execute("SELECT * FROM KhachThue WHERE id = ?", [
-      id,
-    ]);
-    await this.hydrateCurrentContracts(rows);
+    const query = `
+      SELECT kt.*, 
+             h.id as hopDong_id, h.maHopDong,
+             p.id as phong_id, p.maPhong,
+             t.id as toaNha_id, t.tenToaNha
+      FROM KhachThue kt
+      LEFT JOIN HopDong_KhachThue hkt ON kt.id = hkt.khachThue_id
+      LEFT JOIN HopDong h ON h.id = hkt.hopDong_id AND h.trangThai = 'hoatDong'
+      LEFT JOIN Phong p ON p.id = h.phong_id
+      LEFT JOIN ToaNha t ON t.id = p.toaNha_id
+      WHERE kt.id = ?
+    `;
+    const [rows] = await pool.execute(query, [id]);
     return this.normalizeKhachThue(rows[0]);
   }
 
@@ -106,6 +82,23 @@ class KhachThue {
     return rows[0];
   }
 
+  static async findByEmail(email) {
+    if (!email) return null;
+    const [rows] = await pool.execute(
+      "SELECT * FROM KhachThue WHERE email = ?",
+      [email],
+    );
+    return rows[0];
+  }
+
+  static async isRepresentative(id) {
+    const [rows] = await pool.execute(
+      "SELECT id, maHopDong FROM HopDong WHERE nguoiDaiDien_id = ? LIMIT 1",
+      [id],
+    );
+    return rows.length > 0 ? rows[0] : null;
+  }
+
   static async create(data) {
     const {
       hoTen,
@@ -120,8 +113,8 @@ class KhachThue {
       trangThai,
     } = data;
 
-    const matTruoc = data.anhCCCD_matTruoc || anhCCCD?.matTruoc || null;
-    const matSau = data.anhCCCD_matSau || anhCCCD?.matSau || null;
+    const matTruoc = data.anhCCCD_matTruoc || null;
+    const matSau = data.anhCCCD_matSau || null;
 
     let formattedNgaySinh = null;
     if (ngaySinh) {
@@ -174,13 +167,7 @@ class KhachThue {
       "matKhau",
     ];
 
-    if (data.anhCCCD) {
-      if (data.anhCCCD.matTruoc !== undefined)
-        data.anhCCCD_matTruoc = data.anhCCCD.matTruoc;
-      if (data.anhCCCD.matSau !== undefined)
-        data.anhCCCD_matSau = data.anhCCCD.matSau;
-      delete data.anhCCCD;
-    }
+    // Deleted anhCCCD handling
 
     for (const [key, value] of Object.entries(data)) {
       if (value !== undefined && validFields.includes(key)) {
@@ -208,10 +195,38 @@ class KhachThue {
   }
 
   static async delete(id) {
-    const [result] = await pool.execute("DELETE FROM KhachThue WHERE id = ?", [
-      id,
-    ]);
-    return result.affectedRows;
+    // 1. Kiểm tra xem khách có đang là người đại diện của hợp đồng nào không
+    const representativeOf = await this.isRepresentative(id);
+    if (representativeOf) {
+      throw new Error(
+        `Khong the xoa khach thue nay vi ho dang la nguoi dai dien cua hop dong ${representativeOf.maHopDong}. Vui long thay doi nguoi dai dien cua hop dong truoc khi xoa.`,
+      );
+    }
+
+    const connection = await pool.getConnection();
+    try {
+      await connection.beginTransaction();
+
+      // 2. Xóa liên kết trong bảng HopDong_KhachThue
+      await connection.execute(
+        "DELETE FROM HopDong_KhachThue WHERE khachThue_id = ?",
+        [id],
+      );
+
+      // 3. Xóa khách thuê
+      const [result] = await connection.execute(
+        "DELETE FROM KhachThue WHERE id = ?",
+        [id],
+      );
+
+      await connection.commit();
+      return result.affectedRows;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
   }
 }
 

@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { useCache } from '@/hooks/use-cache';
+import { usePermissions } from '@/hooks/use-permissions';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -57,28 +58,12 @@ import { CACHE_KEYS } from '@/lib/cache-keys';
 import { invalidateEntityCaches } from '@/lib/cache-invalidation';
 
 // Helper functions for form and dialogs
-const getPhongName = (phongId: string | { _id?: string; maPhong: string }, phongList: Phong[]) => {
-  if (!phongId) return 'N/A';
-  if (typeof phongId === 'object' && phongId.maPhong) {
-    return phongId.maPhong;
-  }
-  if (typeof phongId === 'string') {
-    const phong = phongList.find(p => p._id === phongId);
-    return phong?.maPhong || 'N/A';
-  }
-  return 'N/A';
+const getPhongName = (hoaDon: HoaDon) => {
+  return (hoaDon as any).maPhong || 'N/A';
 };
 
-const getKhachThueName = (khachThueId: string | { _id?: string; hoTen: string }, khachThueList: KhachThue[]) => {
-  if (!khachThueId) return 'N/A';
-  if (typeof khachThueId === 'object' && khachThueId.hoTen) {
-    return khachThueId.hoTen;
-  }
-  if (typeof khachThueId === 'string') {
-    const khachThue = khachThueList.find(k => k._id === khachThueId);
-    return khachThue?.hoTen || 'N/A';
-  }
-  return 'N/A';
+const getKhachThueName = (hoaDon: HoaDon) => {
+  return (hoaDon as any).tenKhachThue || 'N/A';
 };
 
 const formatCurrency = (amount: number) => {
@@ -183,6 +168,7 @@ export default function HoaDonPage() {
   const hopDongCache = useCache<HopDong[]>({ key: CACHE_KEYS.hopDongList, duration: 300000 });
   const phongCache = useCache<Phong[]>({ key: CACHE_KEYS.phongList, duration: 300000 });
   const khachThueCache = useCache<KhachThue[]>({ key: CACHE_KEYS.khachThueList, duration: 300000 });
+  const { canDelete } = usePermissions();
   
   const [hoaDonList, setHoaDonList] = useState<HoaDon[]>([]);
   const [hopDongList, setHopDongList] = useState<HopDong[]>([]);
@@ -304,7 +290,7 @@ export default function HoaDonPage() {
 
   const handleEdit = (hoaDon: HoaDon) => {
     console.log('Editing hoa don:', hoaDon);
-    router.push(`/dashboard/hoa-don/${hoaDon._id}`);
+    router.push(`/dashboard/hoa-don/${hoaDon.id}`);
   };
 
   const handleDelete = async (id: string) => {
@@ -347,7 +333,7 @@ export default function HoaDonPage() {
   };
 
   const handleCopyLink = (hoaDon: HoaDon) => {
-    const publicUrl = `${window.location.origin}/hoa-don/${hoaDon._id}`;
+    const publicUrl = `${window.location.origin}/hoa-don/${hoaDon.id}`;
     
     navigator.clipboard.writeText(publicUrl).then(() => {
       toast.success('Đã sao chép link hóa đơn vào clipboard!');
@@ -374,7 +360,7 @@ export default function HoaDonPage() {
   const handleDownload = (hoaDon: HoaDon) => {
     const phiDichVuList = getSafePhiDichVu(hoaDon.phiDichVu);
     console.debug('[HoaDonPage][handleDownload] Start export HTML', {
-      invoiceId: hoaDon._id,
+      invoiceId: hoaDon.id,
       maHoaDon: hoaDon.maHoaDon,
       phiDichVuType: typeof hoaDon.phiDichVu,
       phiDichVuIsArray: Array.isArray(hoaDon.phiDichVu),
@@ -405,8 +391,8 @@ export default function HoaDonPage() {
         </div>
         
         <div class="invoice-info">
-          <p><strong>Phòng:</strong> ${getPhongName(hoaDon.phong, phongList)}</p>
-          <p><strong>Khách thuê:</strong> ${getKhachThueName(hoaDon.khachThue, khachThueList)}</p>
+          <p><strong>Phòng:</strong> ${getPhongName(hoaDon)}</p>
+          <p><strong>Khách thuê:</strong> ${getKhachThueName(hoaDon)}</p>
           <p><strong>Tháng/Năm:</strong> ${hoaDon.thang}/${hoaDon.nam}</p>
           <p><strong>Hạn thanh toán:</strong> ${new Date(hoaDon.hanThanhToan).toLocaleDateString('vi-VN')}</p>
         </div>
@@ -477,7 +463,7 @@ export default function HoaDonPage() {
     let tempElement: HTMLDivElement | null = null;
     const phiDichVuList = getSafePhiDichVu(hoaDon.phiDichVu);
     console.debug('[HoaDonPage][handleScreenshot] Start export PDF', {
-      invoiceId: hoaDon._id,
+      invoiceId: hoaDon.id,
       maHoaDon: hoaDon.maHoaDon,
       phiDichVuType: typeof hoaDon.phiDichVu,
       phiDichVuIsArray: Array.isArray(hoaDon.phiDichVu),
@@ -507,8 +493,8 @@ export default function HoaDonPage() {
           <div style="display: flex; gap: 30px; margin-bottom: 30px;">
             <div style="flex: 1;">
               <h3 style="font-size: 16px; font-weight: bold; margin-bottom: 15px; color: #333;">Thông tin phòng</h3>
-              <p style="margin: 5px 0; font-size: 14px;"><strong>Phòng:</strong> ${getPhongName(hoaDon.phong, phongList)}</p>
-              <p style="margin: 5px 0; font-size: 14px;"><strong>Khách thuê:</strong> ${getKhachThueName(hoaDon.khachThue, khachThueList)}</p>
+              <p style="margin: 5px 0; font-size: 14px;"><strong>Phòng:</strong> ${getPhongName(hoaDon)}</p>
+              <p style="margin: 5px 0; font-size: 14px;"><strong>Khách thuê:</strong> ${getKhachThueName(hoaDon)}</p>
               <p style="margin: 5px 0; font-size: 14px;"><strong>Hợp đồng:</strong> N/A</p>
             </div>
             <div style="flex: 1;">
@@ -641,7 +627,7 @@ export default function HoaDonPage() {
       toast.success('Đã xuất hóa đơn thành PDF thành công!');
     } catch (error) {
       console.error('Error generating PDF:', error, {
-        invoiceId: hoaDon._id,
+        invoiceId: hoaDon.id,
         maHoaDon: hoaDon.maHoaDon,
         phiDichVuRaw: hoaDon.phiDichVu,
         normalizedPhiDichVuLength: phiDichVuList.length,
@@ -800,6 +786,7 @@ export default function HoaDonPage() {
             onYearChange={setYearFilter}
             getMonthOptions={getMonthOptions}
             getYearOptions={getYearOptions}
+            canDelete={canDelete}
           />
         </CardContent>
       </Card>
@@ -869,7 +856,7 @@ export default function HoaDonPage() {
             const isOverdue = new Date(hoaDon.hanThanhToan) < new Date() && hoaDon.trangThai !== 'daThanhToan';
             
             return (
-              <Card key={hoaDon._id} className="p-4">
+              <Card key={hoaDon.id} className="p-4">
                 <div className="space-y-3">
                   {/* Header with invoice code and status */}
                   <div className="flex justify-between items-start">
@@ -877,7 +864,7 @@ export default function HoaDonPage() {
                       <h3 className="font-medium text-gray-900">{hoaDon.maHoaDon}</h3>
                       <div className="flex items-center gap-2 mt-1">
                         <Home className="h-3 w-3 text-gray-400" />
-                        <span className="text-sm text-gray-600">{getPhongName(hoaDon.phong, phongList)}</span>
+                        <span className="text-sm text-gray-600">{getPhongName(hoaDon)}</span>
                       </div>
                     </div>
                     <div className="flex flex-col gap-1 items-end">
@@ -894,7 +881,7 @@ export default function HoaDonPage() {
                   <div className="space-y-1 text-sm">
                     <div className="flex items-center gap-2">
                       <Users className="h-3 w-3 text-gray-400" />
-                      <span className="text-gray-600">{getKhachThueName(hoaDon.khachThue, khachThueList)}</span>
+                      <span className="text-gray-600">{getKhachThueName(hoaDon)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-xs text-gray-500">
                       <Calendar className="h-3 w-3" />
@@ -990,10 +977,10 @@ export default function HoaDonPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
                 <div>
                   <h3 className="text-sm md:text-base font-semibold mb-2">Thông tin phòng</h3>
-                  <p className="text-xs md:text-sm"><strong>Phòng:</strong> {getPhongName(viewingHoaDon.phong, phongList)}</p>
-                  <p className="text-xs md:text-sm"><strong>Khách thuê:</strong> {getKhachThueName(viewingHoaDon.khachThue, khachThueList)}</p>
+                  <p className="text-xs md:text-sm"><strong>Phòng:</strong> {getPhongName(viewingHoaDon)}</p>
+                  <p className="text-xs md:text-sm"><strong>Khách thuê:</strong> {getKhachThueName(viewingHoaDon)}</p>
                   <p className="text-xs md:text-sm"><strong>Hợp đồng:</strong> {
-                    typeof viewingHoaDon.hopDong === 'object' ? viewingHoaDon.hopDong.maHopDong : (hopDongList.find(hd => hd._id === viewingHoaDon.hopDong)?.maHopDong || 'N/A')
+                    typeof viewingHoaDon.hopDong === 'object' ? (viewingHoaDon.hopDong as any).maHopDong : (hopDongList.find(hd => hd.id === viewingHoaDon.hopDong_id)?.maHopDong || 'N/A')
                   }</p>
                 </div>
                 <div>
@@ -1174,7 +1161,7 @@ function PaymentForm({
     try {
       type PaymentMethod = ThanhToanCreateRequest['phuongThuc'];
 
-      const rawHoaDonId = (hoaDon as HoaDon & { id?: number | string }).id ?? hoaDon._id;
+      const rawHoaDonId = (hoaDon as HoaDon & { id?: number | string }).id;
       const normalizedHoaDonId =
         typeof rawHoaDonId === 'number' ? rawHoaDonId : Number(rawHoaDonId);
 

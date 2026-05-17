@@ -89,6 +89,20 @@ const formatAddress = (diaChi: ToaNha['diaChi']) => {
   return `${diaChi.soNha} ${diaChi.duong}, ${diaChi.phuong}, ${diaChi.quan}, ${diaChi.thanhPho}`
 }
 
+const tienNghiMap: Record<string, string> = {
+  'wifi': 'WiFi',
+  'camera': 'Camera an ninh',
+  'hamDeXe': 'Hầm để xe',
+  'baoVe': 'Bảo vệ',
+  'giuXe': 'Giữ xe',
+  'thangMay': 'Thang máy',
+  'sanPhoi': 'Sân phơi',
+  'nhaVeSinhChung': 'WC chung',
+  'khuBepChung': 'Bếp chung',
+  'gioTuDo': 'Giờ giấc tự do',
+  'khongChungChu': 'Không chung chủ',
+};
+
 // Create a separate component for the drag handle
 function DragHandle({ id }: { id: string }) {
   const { attributes, listeners } = useSortable({
@@ -113,13 +127,14 @@ type ToaNhaTableProps = {
   onView?: (toaNha: ToaNha) => void
   onEdit: (toaNha: ToaNha) => void
   onDelete: (id: string) => void
+  canDelete?: boolean
 }
 
 const createColumns = (props: ToaNhaTableProps): ColumnDef<ToaNha>[] => [
   {
     id: "drag",
     header: () => null,
-    cell: ({ row }) => <DragHandle id={row.original._id!} />,
+    cell: ({ row }) => <DragHandle id={row.original.id!.toString()} />,
     enableHiding: false,
   },
   {
@@ -215,7 +230,7 @@ const createColumns = (props: ToaNhaTableProps): ColumnDef<ToaNha>[] => [
       <div className="flex flex-wrap gap-1 max-w-48">
         {row.original.tienNghiChung.slice(0, 2).map((tienNghi) => (
           <Badge key={tienNghi} variant="secondary" className="text-xs">
-            {tienNghi}
+            {tienNghiMap[tienNghi] || tienNghi}
           </Badge>
         ))}
         {row.original.tienNghiChung.length > 2 && (
@@ -261,13 +276,15 @@ const createColumns = (props: ToaNhaTableProps): ColumnDef<ToaNha>[] => [
             Chỉnh sửa
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            className="text-destructive"
-            onClick={() => props.onDelete(row.original._id!)}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Xóa
-          </DropdownMenuItem>
+          {props.canDelete !== false && (
+            <DropdownMenuItem
+              className="text-destructive"
+              onClick={() => props.onDelete(row.original.id!.toString())}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Xóa
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     ),
@@ -277,7 +294,7 @@ const createColumns = (props: ToaNhaTableProps): ColumnDef<ToaNha>[] => [
 
 function DraggableRow({ row }: { row: Row<ToaNha> }) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
-    id: row.original._id!,
+    id: row.original.id!.toString(),
   })
 
   return (
@@ -304,6 +321,7 @@ type ToaNhaDataTableProps = ToaNhaTableProps & {
   data: ToaNha[]
   searchTerm?: string
   onSearchChange?: (value: string) => void
+  canDelete?: boolean
 }
 
 export function ToaNhaDataTable(props: ToaNhaDataTableProps) {
@@ -320,14 +338,14 @@ export function ToaNhaDataTable(props: ToaNhaDataTableProps) {
     pageIndex: 0,
     pageSize: 10,
   })
-  
+
   // Sync data when prop changes
   React.useEffect(() => {
     setData(initialData)
   }, [initialData])
-  
+
   const columns = React.useMemo(() => createColumns(tableProps), [tableProps])
-  
+
   const sortableId = React.useId()
   const sensors = useSensors(
     useSensor(MouseSensor, {}),
@@ -336,7 +354,7 @@ export function ToaNhaDataTable(props: ToaNhaDataTableProps) {
   )
 
   const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => data?.map(({ _id }) => _id!) || [],
+    () => data?.map(({ id }) => id!.toString()) || [],
     [data]
   )
 
@@ -350,7 +368,7 @@ export function ToaNhaDataTable(props: ToaNhaDataTableProps) {
       columnFilters,
       pagination,
     },
-    getRowId: (row) => row._id!,
+    getRowId: (row) => row.id!.toString(),
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -393,7 +411,7 @@ export function ToaNhaDataTable(props: ToaNhaDataTableProps) {
             />
           </div>
         </div>
-        
+
         {/* Tùy chỉnh cột bên phải */}
         <div className="flex items-center gap-2">
           <DropdownMenu>
@@ -431,7 +449,7 @@ export function ToaNhaDataTable(props: ToaNhaDataTableProps) {
           </DropdownMenu>
         </div>
       </div>
-      
+
       <div className="overflow-hidden rounded-lg border">
         <DndContext
           collisionDetection={closestCenter}
@@ -450,9 +468,9 @@ export function ToaNhaDataTable(props: ToaNhaDataTableProps) {
                         {header.isPlaceholder
                           ? null
                           : flexRender(
-                              header.column.columnDef.header,
-                              header.getContext()
-                            )}
+                            header.column.columnDef.header,
+                            header.getContext()
+                          )}
                       </TableHead>
                     )
                   })}
@@ -483,7 +501,7 @@ export function ToaNhaDataTable(props: ToaNhaDataTableProps) {
           </Table>
         </DndContext>
       </div>
-      
+
       <div className="flex items-center justify-between px-4">
         <div className="text-muted-foreground hidden flex-1 text-sm lg:flex">
           {selectedCount > 0 ? (

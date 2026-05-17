@@ -41,12 +41,12 @@ import { HoaDon, Phong, KhachThue } from "@/types"
 
 // Helper functions
 const getPhongName = (phongId: string, phongList: Phong[]) => {
-  const phong = phongList.find(p => p._id === phongId);
+  const phong = phongList.find(p => (p.id?.toString()) === phongId);
   return phong?.maPhong || 'Không xác định';
 };
 
 const getKhachThueName = (khachThueId: string, khachThueList: KhachThue[]) => {
-  const khachThue = khachThueList.find(k => k._id === khachThueId);
+  const khachThue = khachThueList.find(k => (k.id?.toString()) === khachThueId);
   return khachThue?.hoTen || 'Không xác định';
 };
 
@@ -357,7 +357,7 @@ export function createColumns(
               </Button>
             )}
             <DeleteConfirmPopover
-              onConfirm={() => onDelete(hoaDon._id!)}
+              onConfirm={() => onDelete((hoaDon.id?.toString())!)}
               title="Xóa hóa đơn"
               description={`Bạn có chắc chắn muốn xóa hóa đơn ${hoaDon.maHoaDon}? Tất cả dữ liệu liên quan sẽ bị mất và không thể khôi phục.`}
               className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
@@ -418,7 +418,7 @@ export function HoaDonDataTable({
 
   const handleDeleteSelected = () => {
     const selectedRows = table.getFilteredSelectedRowModel().rows;
-    const selectedIds = selectedRows.map(row => row.original._id).filter(Boolean) as string[];
+    const selectedIds = selectedRows.map(row => (row.original.id?.toString())).filter(Boolean) as string[];
     
     if (selectedIds.length > 0) {
       onDeleteMultiple(selectedIds);

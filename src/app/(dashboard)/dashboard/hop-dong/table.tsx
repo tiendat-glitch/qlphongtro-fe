@@ -162,46 +162,26 @@ type HopDongTableProps = {
   onGiaHan: (hopDong: HopDong) => void
   onHuy: (hopDong: HopDong) => void
   actionLoading: string | null
+  canDelete?: boolean
 }
 
-const getPhongName = (phong: string | { maPhong: string }, phongList: Phong[]) => {
-  if (typeof phong === 'object' && phong?.maPhong) {
-    return phong.maPhong
-  }
-  const phongObj = phongList.find(p => p._id === phong)
-  return phongObj?.maPhong || 'N/A'
+const getPhongName = (hopDong: HopDong) => {
+  return (hopDong as any).maPhong || 'N/A'
 }
 
-const getKhachThueName = (khachThue: string | { hoTen: string }, khachThueList: KhachThue[]) => {
-  if (typeof khachThue === 'object' && khachThue?.hoTen) {
-    return khachThue.hoTen
-  }
-  const khachThueObj = khachThueList.find(k => k._id === khachThue)
-  return khachThueObj?.hoTen || 'N/A'
+const getKhachThueName = (hopDong: HopDong) => {
+  return (hopDong as any).tenKhachThue || (hopDong as any).tenNguoiDaiDien || 'N/A'
 }
 
-const getToaNhaName = (phong: string | { toaNha?: { tenToaNha?: string } | string }, phongList: Phong[], toaNhaList: ToaNha[]) => {
-  if (typeof phong === 'object' && phong?.toaNha) {
-    if (typeof phong.toaNha === 'object') {
-      return phong.toaNha.tenToaNha || 'N/A'
-    }
-    const toaNhaObj = toaNhaList.find(t => t._id === phong.toaNha)
-    return toaNhaObj?.tenToaNha || 'N/A'
-  }
-  const phongObj = phongList.find(p => p._id === phong)
-  if (!phongObj) return 'N/A'
-  if (typeof phongObj.toaNha === 'object') {
-    return phongObj.toaNha.tenToaNha || 'N/A'
-  }
-  const toaNhaObj = toaNhaList.find(t => t._id === phongObj.toaNha)
-  return toaNhaObj?.tenToaNha || 'N/A'
+const getToaNhaName = (hopDong: HopDong) => {
+  return (hopDong as any).tenToaNha || 'N/A'
 }
 
 const createColumns = (props: HopDongTableProps): ColumnDef<HopDong>[] => [
   {
     id: "drag",
     header: () => null,
-    cell: ({ row }) => <DragHandle id={row.original._id!} />,
+    cell: ({ row }) => <DragHandle id={row.original.id!.toString()} />,
     enableHiding: false,
   },
   {
@@ -243,9 +223,9 @@ const createColumns = (props: HopDongTableProps): ColumnDef<HopDong>[] => [
     header: "Phòng",
     cell: ({ row }) => (
       <div className="min-w-24">
-        <div className="font-medium">{getPhongName(row.original.phong, props.phongList)}</div>
+        <div className="font-medium">{getPhongName(row.original)}</div>
         <div className="text-xs text-muted-foreground">
-          {getToaNhaName(row.original.phong, props.phongList, props.toaNhaList)}
+          {getToaNhaName(row.original)}
         </div>
       </div>
     ),
@@ -254,19 +234,12 @@ const createColumns = (props: HopDongTableProps): ColumnDef<HopDong>[] => [
     accessorKey: "khachThueId",
     header: "Khách thuê",
     cell: ({ row }) => {
-      const khachThueId = row.original.khachThueId || []
-      const khachThue = khachThueId[0]
-      const count = khachThueId.length
+      const tenKhachThue = getKhachThueName(row.original)
       return (
         <div className="min-w-32">
           <div className="font-medium">
-            {getKhachThueName(khachThue!, props.khachThueList)}
+            {tenKhachThue}
           </div>
-          {count > 1 && (
-            <div className="text-xs text-muted-foreground">
-              +{count - 1} người khác
-            </div>
-          )}
         </div>
       )
     },
@@ -352,13 +325,15 @@ const createColumns = (props: HopDongTableProps): ColumnDef<HopDong>[] => [
             </>
           )}
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            className="text-destructive"
-            onClick={() => props.onDelete(row.original._id!)}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Xóa
-          </DropdownMenuItem>
+          {props.canDelete !== false && (
+            <DropdownMenuItem 
+              className="text-destructive"
+              onClick={() => props.onDelete(row.original.id!.toString())}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Xóa
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     ),
@@ -368,7 +343,7 @@ const createColumns = (props: HopDongTableProps): ColumnDef<HopDong>[] => [
 
 function DraggableRow({ row }: { row: Row<HopDong> }) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
-    id: row.original._id!,
+    id: row.original.id!.toString(),
   })
 
   return (
@@ -400,6 +375,7 @@ type HopDongDataTableProps = HopDongTableProps & {
   toaNhaFilter?: string
   onToaNhaChange?: (value: string) => void
   allToaNhaList?: ToaNha[]
+  canDelete?: boolean
 }
 
 export function HopDongDataTable(props: HopDongDataTableProps) {
@@ -432,7 +408,7 @@ export function HopDongDataTable(props: HopDongDataTableProps) {
   )
 
   const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => data?.map(({ _id }) => _id!) || [],
+    () => data?.map(({ id }) => id!.toString()) || [],
     [data]
   )
 
@@ -446,7 +422,7 @@ export function HopDongDataTable(props: HopDongDataTableProps) {
       columnFilters,
       pagination,
     },
-    getRowId: (row) => row._id!,
+    getRowId: (row) => row.id!.toString(),
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -506,7 +482,7 @@ export function HopDongDataTable(props: HopDongDataTableProps) {
             <SelectContent>
               <SelectItem value="all">Tất cả</SelectItem>
               {allToaNhaList?.map((toaNha) => (
-                <SelectItem key={toaNha._id} value={toaNha._id!}>
+                <SelectItem key={toaNha.id} value={toaNha.id?.toString() || ''}>
                   {toaNha.tenToaNha}
                 </SelectItem>
               ))}

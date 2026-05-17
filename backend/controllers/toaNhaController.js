@@ -82,6 +82,10 @@ exports.deleteToaNha = async (req, res) => {
     }
 
     // Kiểm tra quyền
+    if (req.user && req.user.vaiTro === "nhanVien") {
+      return errorResponse(res, 403, "Nhân viên không có quyền xóa tòa nhà này");
+    }
+
     if (
       req.user &&
       req.user.vaiTro === "chuNha" &&

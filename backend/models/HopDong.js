@@ -120,20 +120,11 @@ class HopDong {
 
     return {
       ...row,
-      _id: row.id.toString(),
-      phong: {
-        _id: row.phong_id?.toString() || "",
-        maPhong: row.maPhong || "N/A",
-        toaNha: {
-          _id: row.toaNha_id?.toString() || "",
-          tenToaNha: row.tenToaNha || "N/A",
-        },
-      },
-      nguoiDaiDien: {
-        _id: row.nguoiDaiDien_id?.toString() || "",
-        hoTen: row.tenNguoiDaiDien || "N/A",
-        soDienThoai: row.sdtNguoiDaiDien || "",
-      },
+      maPhong: row.maPhong || "N/A",
+      toaNha_id: row.toaNha_id,
+      tenToaNha: row.tenToaNha || "N/A",
+      tenNguoiDaiDien: row.tenNguoiDaiDien || "N/A",
+      sdtNguoiDaiDien: row.sdtNguoiDaiDien || "",
       khachThueId: row.khachThueId || [],
       phiDichVu: this.parseJsonField(row.phiDichVu, []),
     };
@@ -266,6 +257,14 @@ class HopDong {
           "UPDATE Phong SET trangThai = ? WHERE id = ?",
           ["dangThue", phong_id],
         );
+
+        if (khachThueIds && khachThueIds.length > 0) {
+          const tenantPlaceholders = khachThueIds.map(() => "?").join(",");
+          await connection.execute(
+            `UPDATE KhachThue SET trangThai = 'dangThue' WHERE id IN (${tenantPlaceholders})`,
+            khachThueIds,
+          );
+        }
       }
 
       await connection.commit();
@@ -302,20 +301,7 @@ class HopDong {
     ];
     const { khachThueIds } = data;
 
-    if (data.phong) {
-      data.phong_id =
-        typeof data.phong === "object"
-          ? data.phong.id || data.phong._id
-          : data.phong;
-      delete data.phong;
-    }
-    if (data.nguoiDaiDien) {
-      data.nguoiDaiDien_id =
-        typeof data.nguoiDaiDien === "object"
-          ? data.nguoiDaiDien.id || data.nguoiDaiDien._id
-          : data.nguoiDaiDien;
-      delete data.nguoiDaiDien;
-    }
+    // Removed nested object spreading since frontend sends flat properties
 
     for (const [key, value] of Object.entries(data)) {
       if (key === "khachThueIds") continue;

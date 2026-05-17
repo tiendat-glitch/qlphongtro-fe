@@ -19,14 +19,10 @@ class ThongBao {
     query += " ORDER BY ngayTao DESC";
     const [rows] = await pool.execute(query, params);
 
-    // Map data để khớp với Frontend
+    // Map data để khớp với Frontend phẳng
     return rows.map((row) => ({
       ...row,
-      _id: row.id.toString(),
       loai: row.loaiThongBao,
-      nguoiNhan: row.nguoiChung ? [row.nguoiChung.toString()] : [], // MySQL lưu 1 id, giả lập mảng
-      daDoc: row.daDoc ? [row.nguoiChung?.toString()] : [], // Giả lập mảng đã đọc
-      phong: row.phong ? JSON.parse(row.phong) : [],
       ngayGui: row.ngayTao,
     }));
   }
@@ -68,8 +64,8 @@ class ThongBao {
     if (data.loai !== undefined) {
       data.loaiThongBao = data.loai;
     }
-    if (data.nguoiNhan && data.nguoiNhan.length > 0) {
-      data.nguoiChung = data.nguoiNhan[0];
+    if (data.nguoiNhan) {
+      data.nguoiChung = Array.isArray(data.nguoiNhan) ? data.nguoiNhan[0] : data.nguoiNhan;
     }
 
     for (const [key, value] of Object.entries(data)) {

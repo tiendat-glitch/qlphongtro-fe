@@ -39,12 +39,11 @@ import {
   Bell, 
   Calendar,
   Users,
-  Eye,
-  Filter,
   Send,
   Building2,
   Home,
-  RefreshCw
+  RefreshCw,
+  Eye
 } from 'lucide-react';
 import { ThongBao, ToaNha, Phong, KhachThue } from '@/types';
 import { toast } from 'sonner';
@@ -53,6 +52,7 @@ import { thongBaoService } from '@/services/thongBaoService';
 import { toaNhaService } from '@/services/toaNhaService';
 import { phongService } from '@/services/phongService';
 import { khachThueService } from '@/services/khachThueService';
+import { hopDongService } from '@/services/hopDongService';
 
 export default function ThongBaoPage() {
   const cache = useCache<{
@@ -159,14 +159,14 @@ export default function ThongBaoPage() {
 
   const getToaNhaName = (toaNhaId?: string) => {
     if (!toaNhaId) return 'Tất cả tòa nhà';
-    const toaNha = toaNhaList.find(tn => tn._id === toaNhaId);
+    const toaNha = toaNhaList.find(tn => (tn.id?.toString()) === toaNhaId);
     return toaNha?.tenToaNha || 'Không xác định';
   };
 
   const getPhongNames = (phongIds: string[]) => {
     if (phongIds.length === 0) return 'Tất cả phòng';
     const phongNames = phongIds.map(id => {
-      const phong = phongList.find(p => p._id === id);
+      const phong = phongList.find(p => (p.id?.toString()) === id);
       return phong?.maPhong || 'Không xác định';
     });
     return phongNames.join(', ');
@@ -175,7 +175,7 @@ export default function ThongBaoPage() {
   const getKhachThueNames = (khachThueIds: string[]) => {
     if (!khachThueIds || khachThueIds.length === 0) return 'Tất cả khách thuê';
     const khachThueNames = khachThueIds.map(id => {
-      const khachThue = khachThueList.find(k => k._id === id);
+      const khachThue = khachThueList.find(k => (k.id?.toString()) === id);
       return khachThue?.hoTen || 'Không xác định';
     });
     return khachThueNames.join(', ');
@@ -191,7 +191,7 @@ export default function ThongBaoPage() {
       try {
         await thongBaoService.delete(id);
         cache.clearCache();
-        setThongBaoList(prev => prev.filter(thongBao => thongBao._id !== id));
+        setThongBaoList(prev => prev.filter(thongBao => (thongBao.id?.toString()) !== id));
         toast.success('Xóa thông báo thành công');
       } catch (error: any) {
         console.error('Error deleting thong bao:', error);
@@ -202,7 +202,7 @@ export default function ThongBaoPage() {
 
   const handleSend = (thongBao: ThongBao) => {
     // Implement send logic
-    console.log('Sending notification:', thongBao._id);
+    console.log('Sending notification:', thongBao.id);
   };
 
   if (loading) {
@@ -375,7 +375,7 @@ export default function ThongBaoPage() {
               </TableHeader>
               <TableBody>
                 {filteredThongBao.map((thongBao) => (
-                  <TableRow key={thongBao._id}>
+                  <TableRow key={thongBao.id}>
                     <TableCell className="font-medium">
                       <div>
                         <div className="font-medium">{thongBao.tieuDe}</div>
@@ -438,7 +438,7 @@ export default function ThongBaoPage() {
                         <Button 
                           variant="outline" 
                           size="sm"
-                          onClick={() => handleDelete(thongBao._id!)}
+                          onClick={() => handleDelete((thongBao.id?.toString())!)}
                           className="text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -490,7 +490,7 @@ export default function ThongBaoPage() {
         <div className="space-y-3">
           {filteredThongBao.map((thongBao) => {
             return (
-              <Card key={thongBao._id} className="p-4">
+              <Card key={thongBao.id} className="p-4">
                 <div className="space-y-3">
                   {/* Header with title and type */}
                   <div className="flex justify-between items-start gap-2">
@@ -561,7 +561,7 @@ export default function ThongBaoPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDelete(thongBao._id!)}
+                      onClick={() => handleDelete((thongBao.id?.toString())!)}
                       className="flex-1 text-red-600 hover:bg-red-50"
                     >
                       <Trash2 className="h-3.5 w-3.5 mr-1" />
@@ -601,6 +601,20 @@ function ThongBaoForm({
   onClose: () => void;
   onSuccess: () => void;
 }) {
+  const [hopDongList, setHopDongList] = useState<HopDong[]>([]);
+
+  useEffect(() => {
+    const fetchHopDongs = async () => {
+      try {
+        const data = await hopDongService.getAll();
+        setHopDongList(data);
+      } catch (error) {
+        console.error('Error fetching contracts:', error);
+      }
+    };
+    fetchHopDongs();
+  }, []);
+
   const [formData, setFormData] = useState({
     tieuDe: thongBao?.tieuDe || '',
     noiDung: thongBao?.noiDung || '',
@@ -610,12 +624,37 @@ function ThongBaoForm({
     toaNha: thongBao?.toaNha || '',
   });
 
+  // Lọc phòng theo tòa nhà được chọn
+  const filteredPhongList = formData.toaNha && formData.toaNha !== 'all'
+    ? phongList.filter(p => p.toaNha_id?.toString() === formData.toaNha)
+    : phongList;
+
+  // Lọc khách thuê theo tòa nhà được chọn
+  const activeContracts = hopDongList.filter(hd => hd.trangThai === 'hoatDong');
+  const filteredKhachThueList = formData.toaNha && formData.toaNha !== 'all'
+    ? khachThueList.filter(kt => {
+        return activeContracts.some(hd => 
+          hd.nguoiDaiDien_id?.toString() === kt.id?.toString() &&
+          filteredPhongList.some(p => p.id?.toString() === hd.phong_id?.toString())
+        );
+      })
+    : khachThueList;
+
+  const handleToaNhaChange = (toaNhaId: string) => {
+    setFormData(prev => ({
+      ...prev,
+      toaNha: toaNhaId,
+      phong: [],
+      nguoiNhan: []
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     try {
       if (thongBao) {
-        await thongBaoService.update(thongBao._id as string, formData);
+        await thongBaoService.update((thongBao.id) as string, formData);
       } else {
         await thongBaoService.create(formData);
       }
@@ -627,22 +666,52 @@ function ThongBaoForm({
     }
   };
 
-  const handleNguoiNhanChange = (khachThueId: string, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      nguoiNhan: checked 
-        ? [...prev.nguoiNhan, khachThueId]
-        : prev.nguoiNhan.filter(id => id !== khachThueId)
-    }));
+  const handlePhongChange = (phongId: string, checked: boolean) => {
+    setFormData(prev => {
+      const newPhongs = checked 
+        ? [...prev.phong, phongId]
+        : prev.phong.filter(id => id !== phongId);
+        
+      // Khi chọn phòng, tự động thêm khách thuê đang ở phòng đó
+      let newNguoiNhan = [...prev.nguoiNhan];
+      if (checked) {
+        const hds = hopDongList.filter(hd => hd.phong_id?.toString() === phongId && hd.trangThai === 'hoatDong');
+        hds.forEach(hd => {
+          if (hd.nguoiDaiDien_id && !newNguoiNhan.includes(hd.nguoiDaiDien_id.toString())) {
+            newNguoiNhan.push(hd.nguoiDaiDien_id.toString());
+          }
+        });
+      }
+
+      return {
+        ...prev,
+        phong: newPhongs,
+        nguoiNhan: newNguoiNhan
+      };
+    });
   };
 
-  const handlePhongChange = (phongId: string, checked: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      phong: checked 
-        ? [...prev.phong, phongId]
-        : prev.phong.filter(id => id !== phongId)
-    }));
+  const handleNguoiNhanChange = (khachThueId: string, checked: boolean) => {
+    setFormData(prev => {
+      const newNguoiNhan = checked 
+        ? [...prev.nguoiNhan, khachThueId]
+        : prev.nguoiNhan.filter(id => id !== khachThueId);
+
+      // Khi chọn khách thuê, chọn luôn phòng của khách đó
+      let newPhongs = [...prev.phong];
+      if (checked) {
+        const hd = hopDongList.find(h => h.nguoiDaiDien_id?.toString() === khachThueId && h.trangThai === 'hoatDong');
+        if (hd && hd.phong_id && !newPhongs.includes(hd.phong_id.toString())) {
+          newPhongs.push(hd.phong_id.toString());
+        }
+      }
+
+      return {
+        ...prev,
+        nguoiNhan: newNguoiNhan,
+        phong: newPhongs
+      };
+    });
   };
 
   return (
@@ -690,14 +759,14 @@ function ThongBaoForm({
 
       <div className="space-y-2">
         <Label htmlFor="toaNha" className="text-xs md:text-sm">Tòa nhà</Label>
-        <Select value={formData.toaNha} onValueChange={(value) => setFormData(prev => ({ ...prev, toaNha: value }))}>
+        <Select value={formData.toaNha} onValueChange={handleToaNhaChange}>
           <SelectTrigger className="text-sm">
             <SelectValue placeholder="Chọn tòa nhà (tùy chọn)" />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all" className="text-sm">Tất cả tòa nhà</SelectItem>
             {toaNhaList.map((toaNha) => (
-              <SelectItem key={toaNha._id} value={toaNha._id!} className="text-sm">
+              <SelectItem key={toaNha.id} value={(toaNha.id?.toString())!} className="text-sm">
                 {toaNha.tenToaNha}
               </SelectItem>
             ))}
@@ -708,16 +777,16 @@ function ThongBaoForm({
       <div className="space-y-2">
         <Label className="text-xs md:text-sm">Phòng (tùy chọn)</Label>
         <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded-md p-2">
-          {phongList.map((phong) => (
-            <div key={phong._id} className="flex items-center space-x-2">
+          {filteredPhongList.map((phong) => (
+            <div key={phong.id} className="flex items-center space-x-2">
               <input
                 type="checkbox"
-                id={phong._id}
-                checked={formData.phong.includes(phong._id!)}
-                onChange={(e) => handlePhongChange(phong._id!, e.target.checked)}
+                id={(phong.id?.toString())}
+                checked={formData.phong.includes((phong.id?.toString())!)}
+                onChange={(e) => handlePhongChange((phong.id?.toString())!, e.target.checked)}
                 className="rounded border-gray-300"
               />
-              <Label htmlFor={phong._id} className="text-xs cursor-pointer">
+              <Label htmlFor={(phong.id?.toString())} className="text-xs cursor-pointer">
                 {phong.maPhong}
               </Label>
             </div>
@@ -728,16 +797,16 @@ function ThongBaoForm({
       <div className="space-y-2">
         <Label className="text-xs md:text-sm">Người nhận</Label>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-32 overflow-y-auto border rounded-md p-2">
-          {khachThueList.map((khachThue) => (
-            <div key={khachThue._id} className="flex items-center space-x-2">
+          {filteredKhachThueList.map((khachThue) => (
+            <div key={khachThue.id} className="flex items-center space-x-2">
               <input
                 type="checkbox"
-                id={khachThue._id}
-                checked={formData.nguoiNhan.includes(khachThue._id!)}
-                onChange={(e) => handleNguoiNhanChange(khachThue._id!, e.target.checked)}
+                id={(khachThue.id?.toString())}
+                checked={formData.nguoiNhan.includes((khachThue.id?.toString())!)}
+                onChange={(e) => handleNguoiNhanChange((khachThue.id?.toString())!, e.target.checked)}
                 className="rounded border-gray-300"
               />
-              <Label htmlFor={khachThue._id} className="text-xs cursor-pointer truncate">
+              <Label htmlFor={(khachThue.id?.toString())} className="text-xs cursor-pointer truncate">
                 {khachThue.hoTen}
               </Label>
             </div>

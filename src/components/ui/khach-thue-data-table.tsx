@@ -177,7 +177,7 @@ export const columns = (
             <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
             <DropdownMenuItem
               onClick={() => {
-                navigator.clipboard.writeText(khachThue._id!);
+                navigator.clipboard.writeText((khachThue.id?.toString())!);
                 toast.success('Đã sao chép ID khách thuê');
               }}
             >
@@ -195,11 +195,11 @@ export const columns = (
               Chỉnh sửa
             </DropdownMenuItem>
             <DropdownMenuItem 
-              onClick={() => onDelete(khachThue._id!)}
+              onClick={() => onDelete((khachThue.id?.toString())!)}
               className="text-red-600"
-              disabled={actionLoading === `delete-${khachThue._id}`}
+              disabled={actionLoading === `delete-${(khachThue.id)}`}
             >
-              {actionLoading === `delete-${khachThue._id}` ? (
+              {actionLoading === `delete-${(khachThue.id)}` ? (
                 <>
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
                   Đang xóa...

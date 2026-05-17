@@ -168,29 +168,22 @@ type HoaDonTableProps = {
   onShare: (hoaDon: HoaDon) => void
   onPayment: (hoaDon: HoaDon) => void
   onDeleteMultiple?: (ids: string[]) => void
+  canDelete?: boolean
 }
 
-const getPhongName = (phong: string | { maPhong: string }, phongList: Phong[]) => {
-  if (typeof phong === 'object' && phong?.maPhong) {
-    return phong.maPhong
-  }
-  const phongObj = phongList.find(p => p._id === phong)
-  return phongObj?.maPhong || 'N/A'
+const getPhongName = (hoaDon: HoaDon) => {
+  return (hoaDon as any).maPhong || 'N/A'
 }
 
-const getKhachThueName = (khachThue: string | { hoTen: string }, khachThueList: KhachThue[]) => {
-  if (typeof khachThue === 'object' && khachThue?.hoTen) {
-    return khachThue.hoTen
-  }
-  const khachThueObj = khachThueList.find(k => k._id === khachThue)
-  return khachThueObj?.hoTen || 'N/A'
+const getKhachThueName = (hoaDon: HoaDon) => {
+  return (hoaDon as any).tenKhachThue || 'N/A'
 }
 
 const createColumns = (props: HoaDonTableProps): ColumnDef<HoaDon>[] => [
   {
     id: "drag",
     header: () => null,
-    cell: ({ row }) => <DragHandle id={row.original._id!} />,
+    cell: ({ row }) => <DragHandle id={row.original.id!.toString()} />,
     enableHiding: false,
   },
   {
@@ -232,7 +225,7 @@ const createColumns = (props: HoaDonTableProps): ColumnDef<HoaDon>[] => [
     header: "Phòng",
     cell: ({ row }) => (
       <div className="min-w-24">
-        <div className="font-medium">{getPhongName(row.original.phong, props.phongList)}</div>
+        <div className="font-medium">{getPhongName(row.original)}</div>
       </div>
     ),
   },
@@ -242,7 +235,7 @@ const createColumns = (props: HoaDonTableProps): ColumnDef<HoaDon>[] => [
     cell: ({ row }) => (
       <div className="min-w-32">
         <div className="font-medium">
-          {getKhachThueName(row.original.khachThue, props.khachThueList)}
+          {getKhachThueName(row.original)}
         </div>
       </div>
     ),
@@ -335,13 +328,15 @@ const createColumns = (props: HoaDonTableProps): ColumnDef<HoaDon>[] => [
             Tải HTML
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            className="text-destructive"
-            onClick={() => props.onDelete(row.original._id!)}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Xóa
-          </DropdownMenuItem>
+          {props.canDelete !== false && (
+            <DropdownMenuItem 
+              className="text-destructive"
+              onClick={() => props.onDelete(row.original.id!.toString())}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Xóa
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     ),
@@ -351,7 +346,7 @@ const createColumns = (props: HoaDonTableProps): ColumnDef<HoaDon>[] => [
 
 function DraggableRow({ row }: { row: Row<HoaDon> }) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
-    id: row.original._id!,
+    id: row.original.id!.toString(),
   })
 
   return (
@@ -386,6 +381,7 @@ type HoaDonDataTableProps = HoaDonTableProps & {
   onYearChange?: (value: string) => void
   getMonthOptions?: () => number[]
   getYearOptions?: () => number[]
+  canDelete?: boolean
 }
 
 export function HoaDonDataTable(props: HoaDonDataTableProps) {
@@ -418,7 +414,7 @@ export function HoaDonDataTable(props: HoaDonDataTableProps) {
   )
 
   const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => data?.map(({ _id }) => _id!) || [],
+    () => data?.map(({ id }) => id!.toString()) || [],
     [data]
   )
 
@@ -432,7 +428,7 @@ export function HoaDonDataTable(props: HoaDonDataTableProps) {
       columnFilters,
       pagination,
     },
-    getRowId: (row) => row._id!,
+    getRowId: (row) => row.id!.toString(),
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -461,7 +457,7 @@ export function HoaDonDataTable(props: HoaDonDataTableProps) {
   // Handle bulk delete
   const handleBulkDelete = () => {
     const selectedRows = table.getFilteredSelectedRowModel().rows
-    const selectedIds = selectedRows.map(row => row.original._id!)
+    const selectedIds = selectedRows.map(row => row.original.id!.toString())
     
     if (selectedIds.length === 0) {
       toast.error('Vui lòng chọn ít nhất một hóa đơn để xóa')
@@ -536,7 +532,7 @@ export function HoaDonDataTable(props: HoaDonDataTableProps) {
 
         {/* Tùy chỉnh cột bên phải */}
         <div className="flex items-center gap-2">
-          {selectedCount > 0 && (
+          {selectedCount > 0 && props.canDelete !== false && (
             <Button 
               variant="destructive" 
               size="sm"

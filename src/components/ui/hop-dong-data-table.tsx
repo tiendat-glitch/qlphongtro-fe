@@ -87,7 +87,7 @@ export function HopDongDataTable({
     if (typeof phong === 'object' && phong?.maPhong) {
       return phong.maPhong;
     }
-    const phongObj = phongList.find(p => p._id === phong);
+    const phongObj = phongList.find(p => (p.id?.toString()) === phong);
     return phongObj?.maPhong || 'Không xác định';
   };
 
@@ -95,7 +95,7 @@ export function HopDongDataTable({
     if (typeof toaNha === 'object' && toaNha?.tenToaNha) {
       return toaNha.tenToaNha;
     }
-    const toaNhaObj = toaNhaList.find(t => t._id === toaNha);
+    const toaNhaObj = toaNhaList.find(t => (t.id?.toString()) === toaNha);
     return toaNhaObj?.tenToaNha || 'Không xác định';
   };
 
@@ -107,10 +107,10 @@ export function HopDongDataTable({
       };
     }
     
-    const phongObj = phongList.find(p => p._id === phong);
+    const phongObj = phongList.find(p => (p.id?.toString()) === phong);
     if (!phongObj) return { maPhong: 'Không xác định', toaNha: 'Không xác định' };
     
-    const toaNha = toaNhaList.find(t => t._id === phongObj.toaNha);
+    const toaNha = toaNhaList.find(t => (t.id?.toString()) === phongObj.toaNha);
     return {
       maPhong: phongObj.maPhong,
       toaNha: toaNha?.tenToaNha || 'Không xác định'
@@ -121,7 +121,7 @@ export function HopDongDataTable({
     if (typeof khachThue === 'object' && khachThue?.hoTen) {
       return khachThue.hoTen;
     }
-    const khachThueObj = khachThueList.find(k => k._id === khachThue);
+    const khachThueObj = khachThueList.find(k => (k.id?.toString()) === khachThue);
     return khachThueObj?.hoTen || 'Không xác định';
   };
 
@@ -273,7 +273,7 @@ export function HopDongDataTable({
               <DropdownMenuLabel>Thao tác</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => {
-                  navigator.clipboard.writeText(hopDong._id!);
+                  navigator.clipboard.writeText((hopDong.id?.toString())!);
                   toast.success('Đã sao chép ID hợp đồng');
                 }}
               >
@@ -296,9 +296,9 @@ export function HopDongDataTable({
                 <>
                   <DropdownMenuItem 
                     onClick={() => onGiaHan(hopDong)}
-                    disabled={actionLoading === `giahan-${hopDong._id}`}
+                    disabled={actionLoading === `giahan-${(hopDong.id)}`}
                   >
-                    {actionLoading === `giahan-${hopDong._id}` ? (
+                    {actionLoading === `giahan-${(hopDong.id)}` ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
                         Đang gia hạn...
@@ -313,9 +313,9 @@ export function HopDongDataTable({
                   <DropdownMenuItem 
                     onClick={() => onHuy(hopDong)}
                     className="text-orange-600"
-                    disabled={actionLoading === `huy-${hopDong._id}`}
+                    disabled={actionLoading === `huy-${(hopDong.id)}`}
                   >
-                    {actionLoading === `huy-${hopDong._id}` ? (
+                    {actionLoading === `huy-${(hopDong.id)}` ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div>
                         Đang hủy...
@@ -332,7 +332,7 @@ export function HopDongDataTable({
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild className="p-0">
                 <DeleteConfirmPopover
-                  onConfirm={() => onDelete(hopDong._id!)}
+                  onConfirm={() => onDelete((hopDong.id?.toString())!)}
                   title="Xóa hợp đồng"
                   description="Bạn có chắc chắn muốn xóa hợp đồng này? Tất cả dữ liệu liên quan sẽ bị mất và không thể khôi phục."
                   buttonVariant="ghost"

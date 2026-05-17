@@ -143,13 +143,14 @@ type KhachThueTableProps = {
   onEdit: (khachThue: KhachThue) => void
   onDelete: (id: string) => void
   actionLoading: string | null
+  canDelete?: boolean
 }
 
 const createColumns = (props: KhachThueTableProps): ColumnDef<KhachThue>[] => [
   {
     id: "drag",
     header: () => null,
-    cell: ({ row }) => <DragHandle id={row.original._id!} />,
+    cell: ({ row }) => <DragHandle id={row.original.id!.toString()} />,
     enableHiding: false,
   },
   {
@@ -251,9 +252,8 @@ const createColumns = (props: KhachThueTableProps): ColumnDef<KhachThue>[] => [
     header: "Phòng đang thuê",
     cell: ({ row }) => {
       const khachThue = row.original as any;
-      const hopDongList = khachThue.hopDongHienTaiList || (khachThue.hopDongHienTai ? [khachThue.hopDongHienTai] : []);
 
-      if (!hopDongList.length) {
+      if (!khachThue.maPhong) {
         return (
           <div className="flex items-center gap-2 text-muted-foreground">
             <Home className="h-4 w-4" />
@@ -262,30 +262,22 @@ const createColumns = (props: KhachThueTableProps): ColumnDef<KhachThue>[] => [
         );
       }
       
-      const phong = hopDongList[0].phong;
-      const toaNha = phong.toaNha;
-      
       return (
         <div className="min-w-32">
           <div className="flex items-center gap-2 mb-1">
             <Home className="h-4 w-4 text-green-600" />
             <div>
               <div className="text-sm font-medium">
-                {phong.maPhong}
+                {khachThue.maPhong}
               </div>
-              {toaNha && (
+              {khachThue.tenToaNha && (
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Building2 className="h-3 w-3" />
-                  {toaNha.tenToaNha}
+                  {khachThue.tenToaNha}
                 </div>
               )}
             </div>
           </div>
-          {hopDongList.length > 1 && (
-            <div className="pl-6 text-xs text-muted-foreground">
-              +{hopDongList.length - 1} phòng khác
-            </div>
-          )}
         </div>
       );
     },
@@ -346,14 +338,16 @@ const createColumns = (props: KhachThueTableProps): ColumnDef<KhachThue>[] => [
             Chỉnh sửa
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            className="text-destructive"
-            onClick={() => props.onDelete(row.original._id!)}
-            disabled={props.actionLoading === `delete-${row.original._id}`}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            {props.actionLoading === `delete-${row.original._id}` ? 'Đang xóa...' : 'Xóa'}
-          </DropdownMenuItem>
+          {props.canDelete !== false && (
+            <DropdownMenuItem 
+              className="text-destructive"
+              onClick={() => props.onDelete(row.original.id!.toString())}
+              disabled={props.actionLoading === `delete-${row.original.id}`}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              {props.actionLoading === `delete-${row.original.id}` ? 'Đang xóa...' : 'Xóa'}
+            </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     ),
@@ -363,7 +357,7 @@ const createColumns = (props: KhachThueTableProps): ColumnDef<KhachThue>[] => [
 
 function DraggableRow({ row }: { row: Row<KhachThue> }) {
   const { transform, transition, setNodeRef, isDragging } = useSortable({
-    id: row.original._id!,
+    id: row.original.id!.toString(),
   })
 
   return (
@@ -392,6 +386,7 @@ type KhachThueDataTableProps = KhachThueTableProps & {
   onSearchChange?: (value: string) => void
   selectedTrangThai?: string
   onTrangThaiChange?: (value: string) => void
+  canDelete?: boolean
 }
 
 export function KhachThueDataTable(props: KhachThueDataTableProps) {
@@ -424,7 +419,7 @@ export function KhachThueDataTable(props: KhachThueDataTableProps) {
   )
 
   const dataIds = React.useMemo<UniqueIdentifier[]>(
-    () => data?.map(({ _id }) => _id!) || [],
+    () => data?.map(({ id }) => id!.toString()) || [],
     [data]
   )
 
@@ -438,7 +433,7 @@ export function KhachThueDataTable(props: KhachThueDataTableProps) {
       columnFilters,
       pagination,
     },
-    getRowId: (row) => row._id!,
+    getRowId: (row) => row.id!.toString(),
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,

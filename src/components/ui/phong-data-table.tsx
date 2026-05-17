@@ -140,9 +140,9 @@ export function PhongDataTable({ data, onEdit, onDelete }: PhongDataTableProps) 
         return (
           <div className="space-y-1">
             {hopDong.khachThueId.map((khach: any, index: number) => (
-              <div key={khach._id} className="text-sm">
+              <div key={khach.id} className="text-sm">
                 <span className="font-medium">{khach.hoTen}</span>
-                {hopDong.nguoiDaiDien && hopDong.nguoiDaiDien._id === khach._id && (
+                {hopDong.nguoiDaiDien && (hopDong.nguoiDaiDien.id === khach.id) && (
                   <span className="text-xs text-blue-600 ml-1">(Đại diện)</span>
                 )}
               </div>
@@ -244,7 +244,7 @@ export function PhongDataTable({ data, onEdit, onDelete }: PhongDataTableProps) 
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 onClick={() => {
-                  navigator.clipboard.writeText(phong._id!);
+                  navigator.clipboard.writeText((phong.id?.toString())!);
                   toast.success('Đã sao chép ID phòng');
                 }}
               >
@@ -256,7 +256,7 @@ export function PhongDataTable({ data, onEdit, onDelete }: PhongDataTableProps) 
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="p-0">
                 <DeleteConfirmPopover
-                  onConfirm={() => onDelete(phong._id!)}
+                  onConfirm={() => onDelete((phong.id?.toString())!)}
                   title="Xóa phòng"
                   description="Bạn có chắc chắn muốn xóa phòng này? Tất cả dữ liệu liên quan sẽ bị mất và không thể khôi phục."
                   buttonVariant="ghost"

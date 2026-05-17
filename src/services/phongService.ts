@@ -11,11 +11,7 @@ const buildQueryString = (filters?: any) => {
     return queryStr;
 };
 
-const mapPhongList = (data: any[]) =>
-    data.map(item => ({
-        ...item,
-        _id: item?._id?.toString?.() || item?.id?.toString?.()
-    })) as Phong[];
+const mapPhongList = (data: any[]) => data as Phong[];
 
 const getAuthToken = async () => {
     const session = await getSession().catch(() => null);
@@ -66,7 +62,7 @@ export const phongService = {
                     return privateMapped;
                 }
             } catch {
-                // Ignore private fallback errors for truly public/unauthenticated access.
+                
             }
 
             return publicMapped;
@@ -87,7 +83,7 @@ export const phongService = {
 
     getById: async (id: number | string) => {
         const data = await apiClient<any>(`/phong/${id}`);
-        return { ...data, _id: data.id.toString() } as Phong;
+        return data as Phong;
     },
 
     create: async (data: Partial<Phong>) => {
@@ -95,7 +91,7 @@ export const phongService = {
             method: 'POST',
             body: JSON.stringify(data),
         });
-        return { ...res, _id: res.id.toString() } as Phong;
+        return res as Phong;
     },
 
     update: async (id: number | string, data: Partial<Phong>) => {
@@ -103,7 +99,7 @@ export const phongService = {
             method: 'PUT',
             body: JSON.stringify(data),
         });
-        return { ...res, _id: res.id.toString() } as Phong;
+        return res as Phong;
     },
 
     delete: async (id: number | string) => {

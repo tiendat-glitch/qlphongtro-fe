@@ -5,17 +5,9 @@ class ToaNha {
     if (!row) return null;
     return {
       ...row,
-      _id: row.id.toString(),
       tongSoPhong: Number(row.tongSoPhong || 0),
       phongTrong: Number(row.phongTrong || 0),
       phongDangThue: Number(row.phongDangThue || 0),
-      diaChi: {
-        soNha: row.soNha,
-        duong: row.duong,
-        phuong: row.phuong,
-        quan: row.quan,
-        thanhPho: row.thanhPho,
-      },
       anhToaNha: row.anhToaNha
         ? typeof row.anhToaNha === "string"
           ? JSON.parse(row.anhToaNha)
@@ -68,15 +60,7 @@ class ToaNha {
       tienNghiChung,
     } = data;
 
-    // Hỗ trợ diaChi object từ frontend
-    if (data.diaChi) {
-      soNha = data.diaChi.soNha;
-      duong = data.diaChi.duong;
-      phuong = data.diaChi.phuong;
-      quan = data.diaChi.quan;
-      thanhPho = data.diaChi.thanhPho;
-    }
-
+    // Removed diaChi object flattening since frontend sends flat properties now
     const [result] = await pool.execute(
       `INSERT INTO ToaNha 
             (tenToaNha, soNha, duong, phuong, quan, thanhPho, moTa, anhToaNha, chuSoHuu_id, tongSoPhong, tienNghiChung) 
@@ -122,16 +106,7 @@ class ToaNha {
       "tienNghiChung",
     ];
 
-    // Nếu frontend gửi diaChi object, hãy làm phẳng nó
-    if (data.diaChi) {
-      if (data.diaChi.soNha !== undefined) data.soNha = data.diaChi.soNha;
-      if (data.diaChi.duong !== undefined) data.duong = data.diaChi.duong;
-      if (data.diaChi.phuong !== undefined) data.phuong = data.diaChi.phuong;
-      if (data.diaChi.quan !== undefined) data.quan = data.diaChi.quan;
-      if (data.diaChi.thanhPho !== undefined)
-        data.thanhPho = data.diaChi.thanhPho;
-      delete data.diaChi;
-    }
+    // Removed diaChi object handling
 
     const fields = [];
     const values = [];

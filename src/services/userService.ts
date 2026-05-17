@@ -1,7 +1,7 @@
 import { apiClient } from './apiClient';
 
 export interface UserProfile {
-  _id: string; // Chuyển đổi từ id
+  id: string | number;
   name: string; // Chuyển đổi từ ten
   email: string;
   phone?: string; // Chuyển đổi từ soDienThoai
@@ -14,8 +14,9 @@ export interface UserProfile {
 }
 
 const mapBackendToFrontend = (data: any): UserProfile => {
+  if (!data) return {} as UserProfile;
   return {
-    _id: data.id?.toString() || '',
+    id: data.id || '',
     name: data.ten || '',
     email: data.email || '',
     phone: data.soDienThoai || '',
@@ -54,9 +55,9 @@ export const userService = {
 
   getAllUsers: async (): Promise<UserProfile[]> => {
     const response = await apiClient<any>('/users');
-    // Trả về { success: true, data: [...] }
-    const users = response.data || [];
-    return users.map(mapBackendToFrontend);
+    const users = response.data || response || [];
+    const userArray = Array.isArray(users) ? users : [];
+    return userArray.map(mapBackendToFrontend);
   },
 
   adminCreateUser: async (payload: any): Promise<UserProfile> => {
@@ -71,10 +72,10 @@ export const userService = {
         trangThai: payload.trangThai || 'hoatDong'
       })
     });
-    return mapBackendToFrontend(data.data);
+    return mapBackendToFrontend(data.data || data);
   },
 
-  adminUpdateUser: async (id: string, payload: any): Promise<UserProfile> => {
+  adminUpdateUser: async (id: string | number, payload: any): Promise<UserProfile> => {
     const data = await apiClient<any>(`/users/${id}`, {
       method: 'PUT',
       body: JSON.stringify({
@@ -86,10 +87,10 @@ export const userService = {
         trangThai: payload.trangThai
       })
     });
-    return mapBackendToFrontend(data.data);
+    return mapBackendToFrontend(data.data || data);
   },
 
-  adminDeleteUser: async (id: string): Promise<boolean> => {
+  adminDeleteUser: async (id: string | number): Promise<boolean> => {
     const response = await apiClient<any>(`/users/${id}`, {
       method: 'DELETE'
     });

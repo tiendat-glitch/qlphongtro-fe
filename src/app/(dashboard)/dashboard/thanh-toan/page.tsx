@@ -56,10 +56,8 @@ import { ThanhToanDataTable } from './table';
 import { thanhToanService } from '@/services/thanhToanService';
 import { hoaDonService } from '@/services/hoaDonService';
 
-// Type cho ThanhToan đã được populate
-type ThanhToanPopulated = Omit<ThanhToan, 'hoaDon'> & {
-  hoaDon: string | HoaDon;
-};
+// Type cho ThanhToan đã được phẳng từ backend
+type ThanhToanPopulated = ThanhToan;
 
 export default function ThanhToanPage() {
   const cache = useCache<{
@@ -75,6 +73,7 @@ export default function ThanhToanPage() {
   const [dateFilter, setDateFilter] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingThanhToan, setEditingThanhToan] = useState<ThanhToanPopulated | null>(null);
+  const [viewingThanhToan, setViewingThanhToan] = useState<ThanhToanPopulated | null>(null);
 
   useEffect(() => {
     document.title = 'Quản lý Thanh toán';
@@ -125,8 +124,12 @@ export default function ThanhToanPage() {
   };
 
   const filteredThanhToan = thanhToanList.filter(thanhToan => {
-    const matchesSearch = thanhToan.ghiChu?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      thanhToan.thongTinChuyenKhoan?.soGiaoDich?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = !searchTerm ||
+      (thanhToan.ghiChu?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (thanhToan.thongTinChuyenKhoan?.soGiaoDich?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      (thanhToan.thongTinChuyenKhoan_soGiaoDich?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      ((thanhToan as any).maHoaDon?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false) ||
+      ((thanhToan as any).maPhong?.toLowerCase().includes(searchTerm.toLowerCase()) ?? false);
     const matchesMethod = methodFilter === 'all' || thanhToan.phuongThuc === methodFilter;
     const matchesDate = dateFilter === 'all' ||
       (dateFilter === 'today' && isToday(thanhToan.ngayThanhToan)) ||
@@ -149,24 +152,8 @@ export default function ThanhToanPage() {
     }
   };
 
-  const getHoaDonInfo = (hoaDon: string | HoaDon | undefined) => {
-    console.log('getHoaDonInfo called with:', hoaDon, 'type:', typeof hoaDon);
-
-    // Nếu hoaDon là object (đã được populate), lấy maHoaDon trực tiếp
-    if (typeof hoaDon === 'object' && hoaDon?.maHoaDon) {
-      console.log('Returning populated maHoaDon:', hoaDon.maHoaDon);
-      return hoaDon.maHoaDon;
-    }
-
-    // Nếu hoaDon là string (ID), tìm trong hoaDonList
-    if (typeof hoaDon === 'string') {
-      const hoaDonItem = hoaDonList.find(h => h._id === hoaDon);
-      console.log('Found hoaDon in list:', hoaDonItem?.maHoaDon);
-      return hoaDonItem?.maHoaDon || 'Không xác định';
-    }
-
-    console.log('Returning default: Không xác định');
-    return 'Không xác định';
+  const getHoaDonInfo = (thanhToan: ThanhToan) => {
+    return (thanhToan as any).maHoaDon || 'Không xác định';
   };
 
   const formatCurrency = (amount: number) => {
@@ -211,7 +198,7 @@ export default function ThanhToanPage() {
       await thanhToanService.delete(id);
 
       cache.clearCache();
-      setThanhToanList(prev => prev.filter(thanhToan => thanhToan._id !== id));
+      setThanhToanList(prev => prev.filter(thanhToan => thanhToan.id !== id));
       toast.success('Xóa thanh toán thành công');
     } catch (error: any) {
       console.error('Error deleting thanh toan:', error);
@@ -221,7 +208,7 @@ export default function ThanhToanPage() {
 
   const handleDownload = (thanhToan: ThanhToanPopulated) => {
     // Implement download logic
-    console.log('Downloading receipt:', thanhToan._id);
+    console.log('Downloading receipt:', thanhToan.id);
   };
 
   if (loading) {
@@ -349,6 +336,7 @@ export default function ThanhToanPage() {
           <ThanhToanDataTable
             data={filteredThanhToan}
             hoaDonList={hoaDonList}
+            onView={setViewingThanhToan}
             onEdit={handleEdit}
             onDelete={handleDelete}
             onDownload={handleDownload}
@@ -409,19 +397,14 @@ export default function ThanhToanPage() {
         {/* Mobile Card List */}
         <div className="space-y-3">
           {filteredThanhToan.map((thanhToan) => {
-            const hoaDonInfo = (typeof thanhToan.hoaDon === 'object' && thanhToan.hoaDon !== null
-              ? thanhToan.hoaDon
-              : hoaDonList.find(h => h._id === thanhToan.hoaDon)) as HoaDon | null;
-            const phongInfo = hoaDonInfo && typeof hoaDonInfo.phong === 'object' ? (hoaDonInfo.phong as any) : null;
-            const khachThueInfo = hoaDonInfo && typeof hoaDonInfo.khachThue === 'object' ? (hoaDonInfo.khachThue as any) : null;
-            const maHoaDon = thanhToan.maHoaDon || hoaDonInfo?.maHoaDon || getHoaDonInfo(thanhToan.hoaDon);
-            const maPhong = thanhToan.maPhong || phongInfo?.maPhong || (hoaDonInfo as any)?.maPhong || 'N/A';
-            const tenNguoiDaiDien = thanhToan.tenNguoiDaiDien || thanhToan.hoTen || khachThueInfo?.hoTen || 'N/A';
-            const nganHang = thanhToan.thongTinChuyenKhoan?.nganHang || thanhToan.thongTinChuyenKhoan_nganHang || '';
-            const soGiaoDich = thanhToan.thongTinChuyenKhoan?.soGiaoDich || thanhToan.thongTinChuyenKhoan_soGiaoDich || '';
+            const maHoaDon = (thanhToan as any).maHoaDon || 'N/A';
+            const maPhong = (thanhToan as any).maPhong || 'N/A';
+            const tenNguoiDaiDien = (thanhToan as any).tenNguoiDaiDien || (thanhToan as any).hoTen || 'N/A';
+            const nganHang = (thanhToan as any).thongTinChuyenKhoan_nganHang || thanhToan.thongTinChuyenKhoan?.nganHang || '';
+            const soGiaoDich = (thanhToan as any).thongTinChuyenKhoan_soGiaoDich || thanhToan.thongTinChuyenKhoan?.soGiaoDich || '';
 
             return (
-              <Card key={thanhToan._id} className="p-4">
+              <Card key={thanhToan.id} className="p-4">
                 <div className="space-y-3">
                   {/* Header with invoice code and method */}
                   <div className="flex justify-between items-start">
@@ -450,11 +433,11 @@ export default function ThanhToanPage() {
                         {tenNguoiDaiDien}
                       </span>
                     </div>
-                    {hoaDonInfo && (
+                    {(thanhToan as any).hanThanhToan && (
                       <div className="flex items-center gap-2">
                         <Calendar className="h-3 w-3 text-gray-400" />
                         <span className="text-gray-600">
-                          Tháng {hoaDonInfo.thang}/{hoaDonInfo.nam}
+                          Hạn: {new Date((thanhToan as any).hanThanhToan).toLocaleDateString('vi-VN')}
                         </span>
                       </div>
                     )}
@@ -495,16 +478,14 @@ export default function ThanhToanPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => {
-                        toast.info('Không thể sửa thanh toán đã tạo. Vui lòng xóa và thêm lại.');
-                      }}
+                      onClick={() => setViewingThanhToan(thanhToan)}
                     >
                       <Eye className="h-3.5 w-3.5" />
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleDelete(thanhToan._id!)}
+                      onClick={() => handleDelete(thanhToan.id!.toString())}
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <Trash2 className="h-3.5 w-3.5" />
@@ -523,6 +504,102 @@ export default function ThanhToanPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!viewingThanhToan} onOpenChange={(open) => !open && setViewingThanhToan(null)}>
+        <DialogContent className="w-[95vw] md:w-full max-w-lg max-h-[90vh] overflow-y-auto p-0 rounded-xl border border-slate-200 shadow-2xl bg-white">
+          <div className="bg-slate-900 text-white p-6 rounded-t-xl border-b border-slate-800">
+            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-white">
+              <Receipt className="h-5 w-5 text-amber-500" />
+              Chi tiết giao dịch thanh toán
+            </DialogTitle>
+            <DialogDescription className="text-slate-400 mt-1">
+              Thông tin chi tiết về hóa đơn và số tiền giao dịch
+            </DialogDescription>
+          </div>
+
+          {viewingThanhToan && (
+            <div className="p-6 space-y-6">
+              <div className="flex justify-between items-center border-b border-slate-100 pb-4">
+                <div>
+                  <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Mã Hóa đơn</p>
+                  <p className="text-base font-mono font-bold text-slate-800 mt-1 bg-slate-50 border border-slate-200 px-2 py-0.5 rounded w-fit">
+                    {(viewingThanhToan as any).maHoaDon || 'N/A'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-slate-500 uppercase tracking-wider font-semibold">Số tiền thanh toán</p>
+                  <p className="text-xl font-extrabold text-slate-950 mt-1">{formatCurrency(viewingThanhToan.soTien)}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-y-4 gap-x-6 text-sm bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <div>
+                  <p className="text-xs text-slate-400 font-medium">Mã phòng</p>
+                  <p className="text-slate-900 font-semibold mt-1">{(viewingThanhToan as any).maPhong || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 font-medium">Người đại diện</p>
+                  <p className="text-slate-900 font-semibold mt-1">{(viewingThanhToan as any).tenNguoiDaiDien || (viewingThanhToan as any).hoTen || 'N/A'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 font-medium">Phương thức thanh toán</p>
+                  <div className="mt-1">{getMethodBadge(viewingThanhToan.phuongThuc)}</div>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-400 font-medium">Ngày thanh toán</p>
+                  <p className="text-slate-950 font-semibold mt-1">
+                    {new Date(viewingThanhToan.ngayThanhToan).toLocaleDateString('vi-VN')}
+                  </p>
+                </div>
+
+                {viewingThanhToan.phuongThuc === 'chuyenKhoan' && (
+                  <>
+                    <div className="border-t border-slate-200 col-span-2 pt-2"></div>
+                    <div>
+                      <p className="text-xs text-slate-400 font-medium">Ngân hàng</p>
+                      <p className="text-slate-900 font-semibold mt-1">
+                        {viewingThanhToan.thongTinChuyenKhoan?.nganHang || (viewingThanhToan as any).thongTinChuyenKhoan_nganHang || '-'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 font-medium">Mã giao dịch</p>
+                      <p className="text-slate-900 font-mono font-semibold mt-1">
+                        {viewingThanhToan.thongTinChuyenKhoan?.soGiaoDich || (viewingThanhToan as any).thongTinChuyenKhoan_soGiaoDich || '-'}
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {viewingThanhToan.ghiChu && (
+                <div className="bg-slate-50/50 p-3 rounded-lg border border-slate-100">
+                  <p className="text-xs text-slate-400 font-medium">Ghi chú</p>
+                  <p className="text-slate-700 text-sm mt-1">{viewingThanhToan.ghiChu}</p>
+                </div>
+              )}
+
+              {viewingThanhToan.anhBienLai && (
+                <div className="space-y-2">
+                  <p className="text-xs text-slate-400 font-medium">Ảnh biên lai giao dịch</p>
+                  <div className="border rounded-xl overflow-hidden shadow-inner max-h-64 flex justify-center bg-slate-50">
+                    <img
+                      src={viewingThanhToan.anhBienLai}
+                      alt="Biên lai thanh toán"
+                      className="max-h-64 object-contain"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <DialogFooter className="pt-2">
+                <Button type="button" className="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-lg" onClick={() => setViewingThanhToan(null)}>
+                  Đóng
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -540,8 +617,7 @@ function ThanhToanForm({
   onSuccess: () => void;
 }) {
   const [formData, setFormData] = useState({
-    hoaDon: thanhToan?.hoaDon ?
-      (typeof thanhToan.hoaDon === 'string' ? thanhToan.hoaDon : (thanhToan.hoaDon as HoaDon)._id || '') : '',
+    hoaDon: thanhToan?.hoaDon_id?.toString() || '',
     soTien: thanhToan?.soTien || 0,
     phuongThuc: thanhToan?.phuongThuc || 'tienMat',
     nganHang: thanhToan?.thongTinChuyenKhoan?.nganHang || '',
@@ -555,7 +631,7 @@ function ThanhToanForm({
   useEffect(() => {
     if (thanhToan) {
       setFormData({
-        hoaDon: typeof thanhToan.hoaDon === 'string' ? thanhToan.hoaDon : (thanhToan.hoaDon as HoaDon)._id || '',
+        hoaDon: thanhToan.hoaDon_id?.toString() || '',
         soTien: thanhToan.soTien,
         phuongThuc: thanhToan.phuongThuc,
         nganHang: thanhToan.thongTinChuyenKhoan?.nganHang || '',
@@ -615,9 +691,9 @@ function ThanhToanForm({
         anhBienLai: formData.anhBienLai,
         ...(formData.phuongThuc === 'chuyenKhoan'
           ? {
-              thongTinChuyenKhoan_nganHang: formData.nganHang.trim() || null,
-              thongTinChuyenKhoan_soGiaoDich: formData.soGiaoDich.trim() || null,
-            }
+            thongTinChuyenKhoan_nganHang: formData.nganHang.trim() || null,
+            thongTinChuyenKhoan_soGiaoDich: formData.soGiaoDich.trim() || null,
+          }
           : {}),
       };
 
@@ -645,7 +721,7 @@ function ThanhToanForm({
           </SelectTrigger>
           <SelectContent>
             {hoaDonList.map((hoaDon) => (
-              <SelectItem key={hoaDon._id} value={hoaDon._id!} className="text-sm">
+              <SelectItem key={hoaDon.id} value={hoaDon.id?.toString() || ''} className="text-sm">
                 {hoaDon.maHoaDon} - {hoaDon.conLai.toLocaleString('vi-VN')} VNĐ còn lại
               </SelectItem>
             ))}

@@ -24,38 +24,9 @@ class SuCo {
   static normalizeSuCo(row) {
     if (!row) return null;
 
-    const reporterId = row.khachThue_id ?? row.nguoiBao_id ?? null;
-    const tenKhachThue =
-      row.hoTenKhachThue || row.tenKhachThue || row.tenNguoiBao || "N/A";
-    const sdtKhachThue = row.sdtKhachThue || row.sdtNguoiBao || "";
-    const ngayBaoCao = row.ngayBaoCao || row.ngayBao || null;
-    const khachThue = {
-      _id: reporterId !== null ? reporterId.toString() : "",
-      hoTen: tenKhachThue,
-      soDienThoai: sdtKhachThue,
-    };
-
     return {
       ...row,
-      _id: row.id.toString(),
-      mucDoUuTien: row.mucDo,
-      ngayBaoCao,
-      tenKhachThue,
-      hoTenKhachThue: tenKhachThue,
-      loai: row.loaiSuCo,
-      trangThai: {
-        moi: "choXuLy",
-        dangXuLy: "dangXuLy",
-        daXong: "daXuLy",
-        daHuy: "daXong"
-      }[row.trangThai] || "choXuLy",
-      phong: {
-        _id: row.phong_id?.toString() || "",
-        maPhong: row.maPhong || "N/A",
-      },
-      nguoiBaoCao: khachThue,
-      khachThue,
-      anhSuCo: this.parseImageField(row.hinhAnh),
+      anhSuCo: this.parseImageField(row.hinhAnh)
     };
   }
 
@@ -127,33 +98,11 @@ class SuCo {
 
     const final_loaiSuCo = loaiSuCo || loai || "khac";
 
-    const final_phong_id =
-      phong_id || (typeof phong === "object" ? phong.id || phong._id : phong);
-    const reporter = khachThue || nguoiBaoCao || nguoiBao_id;
-    const final_nguoiBao_id =
-      typeof reporter === "object" ? reporter.id || reporter._id : reporter;
+    const final_phong_id = phong_id || data.phong;
+    const final_nguoiBao_id = nguoiBao_id || data.khachThue || data.nguoiBaoCao;
 
-    const mucDoMap = {
-      nhe: "thap",
-      thap: "thap",
-      vua: "trungBinh",
-      trungBinh: "trungBinh",
-      nghiemTrong: "cao",
-      cao: "cao",
-      khanCap: "khancap",
-      khancap: "khancap",
-    };
-    const final_mucDo = mucDoMap[mucDo || mucDoUuTien] || "trungBinh";
-
-    const trangThaiMap = {
-      choXuLy: "moi",
-      moi: "moi",
-      dangXuLy: "dangXuLy",
-      daXuLy: "daXong",
-      daXong: "daXong",
-      daHuy: "daHuy",
-    };
-    const final_trangThai = trangThaiMap[trangThai] || "moi";
+    const final_mucDo = mucDo || "trungBinh";
+    const final_trangThai = trangThai || "moi";
 
     const final_hinhAnh = hinhAnh || anhSuCo || [];
     const inputDate = ngayBao || ngayBaoCao;
@@ -230,30 +179,7 @@ class SuCo {
       delete data.ngayBao;
     }
 
-    if (data.mucDo) {
-      const mucDoMap = {
-        nhe: "thap",
-        thap: "thap",
-        vua: "trungBinh",
-        trungBinh: "trungBinh",
-        nghiemTrong: "cao",
-        cao: "cao",
-        khanCap: "khancap",
-        khancap: "khancap",
-      };
-      data.mucDo = mucDoMap[data.mucDo] || "trungBinh";
-    }
-    if (data.trangThai) {
-      const trangThaiMap = {
-        choXuLy: "moi",
-        moi: "moi",
-        dangXuLy: "dangXuLy",
-        daXuLy: "daXong",
-        daXong: "daXong",
-        daHuy: "daHuy",
-      };
-      data.trangThai = trangThaiMap[data.trangThai] || "moi";
-    }
+    // Removed mapping logic since frontend follows backend now
 
     for (const [key, value] of Object.entries(data)) {
       if (value !== undefined && validFields.includes(key)) {

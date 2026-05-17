@@ -228,3 +228,63 @@ exports.meKhachThue = async (req, res) => {
     return errorResponse(res, 500, "Lỗi lấy thông tin cá nhân");
   }
 };
+
+// Cập nhật thông tin cá nhân Khách thuê
+exports.updateMeKhachThue = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return errorResponse(res, 401, "Unauthorized");
+    }
+
+    const token = authHeader.substring(7);
+    let decoded;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET || "super_secret");
+    } catch (error) {
+      return errorResponse(res, 401, "Token không hợp lệ");
+    }
+
+    if (decoded.role !== "khachThue") {
+      return errorResponse(res, 403, "Unauthorized");
+    }
+
+    const khachThue = await KhachThue.findById(decoded.id);
+    if (!khachThue) {
+      return errorResponse(res, 404, "Khách thuê không tồn tại");
+    }
+
+    const { cccd, soDienThoai, email } = req.body;
+    
+    if (cccd && cccd !== khachThue.cccd) {
+      const existingCCCD = await KhachThue.findByCCCD(cccd);
+      if (existingCCCD)
+        return errorResponse(res, 400, "Căn cước công dân mới đã tồn tại");
+    }
+    
+    if (soDienThoai && soDienThoai !== khachThue.soDienThoai) {
+      const existingPhone = await KhachThue.findByPhone(soDienThoai);
+      if (existingPhone)
+        return errorResponse(res, 400, "Số điện thoại mới đã tồn tại");
+    }
+
+    if (email && email !== khachThue.email) {
+      const existingEmail = await KhachThue.findByEmail(email);
+      if (existingEmail)
+        return errorResponse(res, 400, "Email mới đã tồn tại");
+    }
+
+    // Tenant should not be able to change their status or hoTen (if restricted, but let's allow hoTen for now)
+    // Avoid changing trangThai
+    delete req.body.trangThai;
+
+    await KhachThue.update(decoded.id, req.body);
+    const updatedKhach = await KhachThue.findById(decoded.id);
+    delete updatedKhach.matKhau;
+
+    return successResponse(res, "Cập nhật thông tin thành công", updatedKhach);
+  } catch (error) {
+    console.error("Update me khach_thue error:", error);
+    return errorResponse(res, 500, "Lỗi khi cập nhật thông tin cá nhân");
+  }
+};
